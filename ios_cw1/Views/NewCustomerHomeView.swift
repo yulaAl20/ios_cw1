@@ -1,99 +1,74 @@
-//
-//  HomeView.swift
-//  ios_cw1
-//
-//  Created by Yulani Alwis on 2026-03-01.
-//
-
 import SwiftUI
 
-struct HomeView: View {
-    
+struct NewCustomerHomeView: View {
     @State private var selectedTab: Int = 0
     @State private var animatePulse: Bool = false
     
     var body: some View {
-        ZStack(alignment: .top) {
-            
-            // Background (unchanged)
+        ZStack {
+            // Background with blue gradient at bottom
             VStack(spacing: 0) {
                 Color(.systemGroupedBackground)
-                
-                LinearGradient(
-                    colors: [
-                        Color.blue.opacity(0.35),
-                        Color.blue.opacity(0.20)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 420)
-                .clipShape(
-                    RoundedCorner(radius: 40,
-                                  corners: [.topLeft, .topRight])
-                )
+                LinearGradient(colors: [Color(#colorLiteral(red: 0.68, green: 0.84, blue: 0.96, alpha: 1)), Color(#colorLiteral(red: 0.8, green: 0.9, blue: 0.98, alpha: 1))], startPoint: .top, endPoint: .bottom)
+                    .frame(height: 400)
+                    .clipShape(RoundedCorner(radius: 40, corners: [.topLeft, .topRight]))
             }
             .ignoresSafeArea()
             
-            
-            // SCROLLABLE CONTENT (WITHOUT HEADER)
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 24) {
-                    
-                    Spacer()
-                        .frame(height: 30) // content below header
-                    
-                    activeQueueCard
-                    quickServicesSection
-                    bookAppointmentCard
-                    topDoctorsSection
-                    
-                    Spacer(minLength: 160)
+            VStack(spacing: 0) {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 24) {
+                        // reuse header from HomeView by recreating minimal header
+                        headerSection
+                        
+                        // NO activeQueueCard for new customers
+                        
+                        quickServicesSection
+                        
+                        bookAppointmentCard
+                        
+                        topDoctorsSection
+                        
+                        Spacer(minLength: 160)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 10)
                 }
-                .padding(.horizontal, 20)
+
+                Spacer(minLength: 0)
             }
-            
-            
-            // header - sticky
-            headerSection
-                .padding(.top,0)
-                .padding(.horizontal, 20)
-                .padding(.bottom,0.5)
-                .background(Color.white)
-        }
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 8) {
-                directionsBar
-                    .padding(.horizontal, 16)
-                floatingNavBar
+            // Fixed bottom overlays using safeAreaInset
+            .safeAreaInset(edge: .bottom) {
+                VStack(spacing: 8) {
+                    directionsBar
+                        .padding(.horizontal, 8)
+                    floatingNavBar
+                }
             }
         }
+        .onAppear { animatePulse = true }
     }
-}
-
-
-extension HomeView {
     
+    // Lightweight copies of components from HomeView
     var headerSection: some View {
         HStack(spacing: 12) {
-            
             ZStack {
                 Circle()
                     .fill(Color.white.opacity(0.25))
                     .frame(width: 44, height: 44)
                 Image(systemName: "person.circle")
                     .font(.system(size: 24))
-                    .foregroundColor(.black.opacity(0.6))
+                    .foregroundColor(.white)
             }
             
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.black)
+                    .foregroundColor(.gray)
                 Text("Search")
-                    .foregroundColor(.black.opacity(0.6))
+                    .foregroundColor(.gray)
                 Spacer()
                 Image(systemName: "mic.fill")
-                    .foregroundColor(.black.opacity(0.6))
+                    .foregroundColor(.gray)
             }
             .padding(10)
             .background(Color.white.opacity(0.2))
@@ -105,67 +80,15 @@ extension HomeView {
                     .frame(width: 36, height: 36)
                 Image(systemName: "bell")
                     .font(.system(size: 18))
-                    .foregroundColor(.black.opacity(0.6))
+                    .foregroundColor(.white)
             }
         }
         .foregroundColor(.black)
-    }
-    
-    var activeQueueCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Your Turn in 10 minutes")
-                        .font(.headline)
-                    
-                    Text("OPD Room 2\nCurrent Queue 3 of 17")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                }
-                
-                Spacer()
-                
-                VStack {
-                    Text("Queue no.")
-                        .font(.subheadline)
-                        .foregroundColor(.blue)
-                    Text("#6")
-                        .font(.title)
-                        .bold()
-                        .foregroundColor(.blue)
-                }
-            }
-            
-            HStack {
-                Button("Leave Queue") {}
-                    .font(.subheadline)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemGray5))
-                    .cornerRadius(20)
-                
-                Spacer()
-                
-                Button("Reschedule") {}
-                    .font(.subheadline)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 8)
-                    .background(Color.blue)
-                    .cornerRadius(20)
-            }
-        }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(24)
-        .shadow(radius: 4)
-        .offset(y: 6)
+        .padding(.top, 40)
     }
     
     var bookAppointmentCard: some View {
         VStack(spacing: 12) {
-            
             Button(action: {}) {
                 Text("Book Appointment")
                     .font(.headline)
@@ -191,8 +114,7 @@ extension HomeView {
     }
     
     var quickServicesSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            
+        VStack(alignment: .leading, spacing: 12) {
             Text("Quick Services")
                 .font(.headline)
             
@@ -203,13 +125,6 @@ extension HomeView {
                 quickServiceItem(icon: "waveform.path.ecg", title: "Scans", color: .purple)
             }
         }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(Color.white)
-        )
-        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
-    
     }
     
     func quickServiceItem(icon: String, title: String, color: Color) -> some View {
@@ -236,7 +151,6 @@ extension HomeView {
     
     var topDoctorsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            
             Text("Top Doctors")
                 .font(.headline)
             
@@ -251,26 +165,15 @@ extension HomeView {
     
     var doctorCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            
             ZStack(alignment: .topLeading) {
-                // Placeholder image — keep as placeholder
-                if UIImage(named: "doctor_placeholder") != nil {
-                    Image("doctor_placeholder")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 220, height: 220)
-                        .clipped()
-                        .cornerRadius(24)
-                } else {
-                    RoundedRectangle(cornerRadius: 24)
-                        .fill(Color(#colorLiteral(red: 0.88, green: 0.94, blue: 0.98, alpha: 1)))
-                        .frame(width: 220, height: 220)
-                        .overlay(
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 60))
-                                .foregroundColor(Color(#colorLiteral(red: 0.36, green: 0.62, blue: 0.86, alpha: 1)))
-                        )
-                }
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(Color(#colorLiteral(red: 0.88, green: 0.94, blue: 0.98, alpha: 1)))
+                    .frame(width: 220, height: 220)
+                    .overlay(
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 60))
+                            .foregroundColor(Color(#colorLiteral(red: 0.36, green: 0.62, blue: 0.86, alpha: 1)))
+                    )
                 
                 Text("⭐ 5.0")
                     .font(.caption)
@@ -289,12 +192,8 @@ extension HomeView {
         }
         .frame(width: 220)
     }
-}
-
-// MARK: - Fixed Bottom Overlays
-extension HomeView {
-
-    // Dark "Need directions?" bar — fixed, not scrolling
+    
+    // directionsBar & floatingNavBar copied from HomeView
     var directionsBar: some View {
         HStack(spacing: 12) {
             Image(systemName: "paperplane.fill")
@@ -325,8 +224,7 @@ extension HomeView {
         .cornerRadius(20)
         .shadow(radius: 8)
     }
-
-    // Floating glass nav bar — pinned to bottom
+    
     var floatingNavBar: some View {
         let selectorSize: CGFloat = 54
         
@@ -347,15 +245,15 @@ extension HomeView {
                         .background(
                             GeometryReader { itemGeo in
                                 Color.clear
-                                    .preference(key: NavItemPreferenceKey.self,
-                                                value: [index: itemGeo.frame(in: .named("navBar"))])
+                                    .preference(key: NewCustomerNavItemPreferenceKey.self,
+                                                value: [index: itemGeo.frame(in: .named("newCustomerNavBar"))])
                             }
                         )
                 }
             }
             .frame(maxWidth: .infinity)
-            .coordinateSpace(name: "navBar")
-            .overlayPreferenceValue(NavItemPreferenceKey.self) { prefs in
+            .coordinateSpace(name: "newCustomerNavBar")
+            .overlayPreferenceValue(NewCustomerNavItemPreferenceKey.self) { prefs in
                 GeometryReader { geo in
                     if let frame = prefs[selectedTab] {
                         // Glass circular selector - very transparent so icon shows through clearly
@@ -430,24 +328,14 @@ extension HomeView {
     }
 }
 
-// Preference key to track nav item frames
-struct NavItemPreferenceKey: PreferenceKey {
+// Preference key to track nav item frames for NewCustomerHomeView
+struct NewCustomerNavItemPreferenceKey: PreferenceKey {
     static var defaultValue: [Int: CGRect] = [:]
     static func reduce(value: inout [Int: CGRect], nextValue: () -> [Int: CGRect]) {
         value.merge(nextValue(), uniquingKeysWith: { $1 })
     }
 }
 
-// RoundedCorner helper
-struct RoundedCorner: Shape {
-    var radius: CGFloat = .infinity
-    var corners: UIRectCorner = .allCorners
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
-        return Path(path.cgPath)
-    }
-}
-
 #Preview {
-    HomeView()
+    NewCustomerHomeView()
 }
