@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct HomeView: View {
     
@@ -15,7 +16,7 @@ struct HomeView: View {
     var body: some View {
         ZStack(alignment: .top) {
             
-            // Background (unchanged)
+            // Background 
             VStack(spacing: 0) {
                 Color(.systemGroupedBackground)
                 
@@ -36,7 +37,7 @@ struct HomeView: View {
             .ignoresSafeArea()
             
             
-            // SCROLLABLE CONTENT (WITHOUT HEADER)
+            // SCROLLABLE CONTENT
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 24) {
                     
@@ -55,17 +56,17 @@ struct HomeView: View {
             
             
             // header - sticky
-            headerSection
-                .padding(.top,0)
+            HeaderView()
+                .padding(.top, 0)
                 .padding(.horizontal, 20)
-                .padding(.bottom,0.5)
+                .padding(.bottom, 0.5)
                 .background(Color.white)
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 8) {
-                directionsBar
+                DirectionsBarView()
                     .padding(.horizontal, 16)
-                floatingNavBar
+                FloatingNavBarView(selectedTab: $selectedTab)
             }
         }
     }
@@ -73,43 +74,6 @@ struct HomeView: View {
 
 
 extension HomeView {
-    
-    var headerSection: some View {
-        HStack(spacing: 12) {
-            
-            ZStack {
-                Circle()
-                    .fill(Color.white.opacity(0.25))
-                    .frame(width: 44, height: 44)
-                Image(systemName: "person.circle")
-                    .font(.system(size: 24))
-                    .foregroundColor(.black.opacity(0.6))
-            }
-            
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.black)
-                Text("Search")
-                    .foregroundColor(.black.opacity(0.6))
-                Spacer()
-                Image(systemName: "mic.fill")
-                    .foregroundColor(.black.opacity(0.6))
-            }
-            .padding(10)
-            .background(Color.white.opacity(0.2))
-            .cornerRadius(20)
-            
-            ZStack {
-                Circle()
-                    .fill(Color.white.opacity(0.25))
-                    .frame(width: 36, height: 36)
-                Image(systemName: "bell")
-                    .font(.system(size: 18))
-                    .foregroundColor(.black.opacity(0.6))
-            }
-        }
-        .foregroundColor(.black)
-    }
     
     var activeQueueCard: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -291,162 +255,6 @@ extension HomeView {
     }
 }
 
-// MARK: - Fixed Bottom Overlays
-extension HomeView {
-
-    // Dark "Need directions?" bar — fixed, not scrolling
-    var directionsBar: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "paperplane.fill")
-                .font(.system(size: 18))
-                .foregroundColor(.white)
-                .padding(10)
-                .background(Color(#colorLiteral(red: 0.07, green: 0.39, blue: 0.64, alpha: 1)))
-                .clipShape(Circle())
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Need directions?")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
-                Text("Find your way inside the clinic")
-                    .font(.system(size: 11))
-                    .foregroundColor(.white.opacity(0.8))
-            }
-
-            Spacer()
-
-            Image(systemName: "arrow.right")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.white.opacity(0.9))
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(Color.black.opacity(0.82))
-        .cornerRadius(20)
-        .shadow(radius: 8)
-    }
-
-    // Floating glass nav bar — pinned to bottom
-    var floatingNavBar: some View {
-        let selectorSize: CGFloat = 54
-        
-        return ZStack {
-            // Background capsule (glass)
-            Capsule()
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    Capsule()
-                        .stroke(Color.white.opacity(0.18), lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 4)
-            
-            // HStack for nav items
-            HStack(spacing: 0) {
-                ForEach(0..<4, id: \.self) { index in
-                    navItem(icon: navIcon(for: index), label: navLabel(for: index), index: index)
-                        .background(
-                            GeometryReader { itemGeo in
-                                Color.clear
-                                    .preference(key: NavItemPreferenceKey.self,
-                                                value: [index: itemGeo.frame(in: .named("navBar"))])
-                            }
-                        )
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .coordinateSpace(name: "navBar")
-            .overlayPreferenceValue(NavItemPreferenceKey.self) { prefs in
-                GeometryReader { geo in
-                    if let frame = prefs[selectedTab] {
-                        // Glass circular selector - very transparent so icon shows through clearly
-                        Circle()
-                            .fill(Color.white.opacity(0.15))
-                            .overlay(
-                                Circle()
-                                    .stroke(
-                                        LinearGradient(
-                                            colors: [Color.white.opacity(0.8), Color.white.opacity(0.3)],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        ),
-                                        lineWidth: 2
-                                    )
-                            )
-                            .shadow(color: Color.white.opacity(0.4), radius: 6, x: 0, y: 0)
-                            .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
-                            .frame(width: selectorSize, height: selectorSize)
-                            .position(x: frame.midX, y: geo.size.height / 2)
-                            .animation(.interactiveSpring(response: 0.4, dampingFraction: 0.7, blendDuration: 0.2), value: selectedTab)
-                            .allowsHitTesting(false)
-                    }
-                }
-            }
-        }
-        .frame(height: 70)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 20)
-    }
-    
-    func navIcon(for index: Int) -> String {
-        switch index {
-        case 0: return "house.fill"
-        case 1: return "square.grid.2x2.fill"
-        case 2: return "calendar"
-        case 3: return "location.fill"
-        default: return "circle"
-        }
-    }
-    
-    func navLabel(for index: Int) -> String {
-        switch index {
-        case 0: return "Home"
-        case 1: return "Services"
-        case 2: return "Appointments"
-        case 3: return "Navigation"
-        default: return ""
-        }
-    }
-
-    func navItem(icon: String, label: String, index: Int) -> some View {
-        let isSelected = selectedTab == index
-        return Button {
-            withAnimation(.interactiveSpring(response: 0.4, dampingFraction: 0.7)) {
-                selectedTab = index
-            }
-        } label: {
-            VStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(isSelected ? Color(#colorLiteral(red: 0.0, green: 0.48, blue: 0.78, alpha: 1)) : .gray)
-                    .scaleEffect(isSelected ? 1.1 : 1.0)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
-                Text(label)
-                    .font(.system(size: 9, weight: isSelected ? .semibold : .regular))
-                    .foregroundColor(isSelected ? Color(#colorLiteral(red: 0.0, green: 0.48, blue: 0.78, alpha: 1)) : .gray)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-        }
-    }
-}
-
-// Preference key to track nav item frames
-struct NavItemPreferenceKey: PreferenceKey {
-    static var defaultValue: [Int: CGRect] = [:]
-    static func reduce(value: inout [Int: CGRect], nextValue: () -> [Int: CGRect]) {
-        value.merge(nextValue(), uniquingKeysWith: { $1 })
-    }
-}
-
-// RoundedCorner helper
-struct RoundedCorner: Shape {
-    var radius: CGFloat = .infinity
-    var corners: UIRectCorner = .allCorners
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
-        return Path(path.cgPath)
-    }
-}
 
 #Preview {
     HomeView()
