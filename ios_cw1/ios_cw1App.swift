@@ -11,7 +11,7 @@ import SwiftUI
 struct ios_cw1App: App {
     var body: some Scene {
         WindowGroup {
-            HomeView()
+            IndoorNavigationView()
         }
     }
 }
