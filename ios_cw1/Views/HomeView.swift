@@ -6,46 +6,67 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct HomeView: View {
     
     @State private var selectedTab: Int = 0
+    @State private var animatePulse: Bool = false
     
     var body: some View {
-        ZStack {
-            Color(.systemGroupedBackground)
-                .ignoresSafeArea()
+        ZStack(alignment: .top) {
             
+            // Background 
             VStack(spacing: 0) {
+                Color(.systemGroupedBackground)
                 
-                ScrollView(showsIndicators: false) {
-                    
-                    VStack(alignment: .leading, spacing: 24) {
-                        
-                        headerSection
-                        
-                        activeQueueCard
-                        
-                        bookAppointmentCard
-                        
-                        quickServicesSection
-                        
-                        topDoctorsSection
-                        
-                        Spacer(minLength: 160)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 10)
-                }
-
-                Spacer(minLength: 0)
+                LinearGradient(
+                    colors: [
+                        Color.blue.opacity(0.35),
+                        Color.blue.opacity(0.20)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 420)
+                .clipShape(
+                    RoundedCorner(radius: 40,
+                                  corners: [.topLeft, .topRight])
+                )
             }
-
-            // Fixed bottom overlays
-            VStack(spacing: 0) {
-                Spacer()
-                directionsBar
-                floatingNavBar
+            .ignoresSafeArea()
+            
+            
+            // SCROLLABLE CONTENT
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 24) {
+                    
+                    Spacer()
+                        .frame(height: 30) // content below header
+                    
+                    activeQueueCard
+                    quickServicesSection
+                    bookAppointmentCard
+                    topDoctorsSection
+                    
+                    Spacer(minLength: 160)
+                }
+                .padding(.horizontal, 20)
+            }
+            
+            
+            // header - sticky
+            HeaderView()
+                .padding(.top, 0)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 0.5)
+                .background(Color.white)
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 8) {
+                DirectionsBarView()
+                    .padding(.horizontal, 16)
+                FloatingNavBarView(selectedTab: $selectedTab)
             }
         }
     }
@@ -53,29 +74,6 @@ struct HomeView: View {
 
 
 extension HomeView {
-    
-    var headerSection: some View {
-        HStack(spacing: 12) {
-            
-            Image(systemName: "person.circle")
-                .font(.system(size: 28))
-            
-            HStack {
-                Image(systemName: "magnifyingglass")
-                Text("Search")
-                    .foregroundColor(.gray)
-                Spacer()
-                Image(systemName: "mic.fill")
-                    .foregroundColor(.gray)
-            }
-            .padding(10)
-            .background(Color(.systemGray6))
-            .cornerRadius(20)
-            
-            Image(systemName: "bell")
-                .font(.system(size: 20))
-        }
-    }
     
     var activeQueueCard: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -126,6 +124,7 @@ extension HomeView {
         .background(Color.white)
         .cornerRadius(24)
         .shadow(radius: 4)
+        .offset(y: 6)
     }
     
     var bookAppointmentCard: some View {
@@ -137,9 +136,13 @@ extension HomeView {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.blue)
+                    .background(
+                        LinearGradient(colors: [Color(#colorLiteral(red: 0.0, green: 0.48, blue: 0.78, alpha: 1)), Color(#colorLiteral(red: 0.09, green: 0.59, blue: 0.83, alpha: 1))], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
                     .cornerRadius(20)
             }
+            .scaleEffect(animatePulse ? 1.02 : 1.0)
+            .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: animatePulse)
             
             Text("Find a doctor and schedule your visit instantly")
                 .font(.subheadline)
@@ -157,32 +160,42 @@ extension HomeView {
             Text("Quick Services")
                 .font(.headline)
             
-            HStack(spacing: 16) {
-                quickServiceItem(icon: "cross.case.fill", title: "Lab Reports", color: .green)
+            HStack(spacing: 0) {
+                quickServiceItem(icon: "stethoscope", title: "Find\nDoctor", color: .blue)
+                quickServiceItem(icon: "cross.case.fill", title: "Lab\nReports", color: .green)
                 quickServiceItem(icon: "pills.fill", title: "Pharmacy", color: .orange)
-                quickServiceItem(icon: "waveform.path.ecg", title: "Scans / X-Ray", color: .purple)
+                quickServiceItem(icon: "waveform.path.ecg", title: "Scans", color: .purple)
             }
         }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white)
+        )
+        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+    
     }
     
     func quickServiceItem(icon: String, title: String, color: Color) -> some View {
-        VStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 24))
-                .foregroundColor(color)
-                .padding()
-                .background(color.opacity(0.1))
-                .cornerRadius(16)
+        VStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.12))
+                    .frame(width: 50, height: 50)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(color)
+            }
             
             Text(title)
-                .font(.caption)
+                .font(.system(size: 10))
+                .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color.white)
-        .cornerRadius(20)
-        .shadow(radius: 3)
     }
     
     var topDoctorsSection: some View {
@@ -204,13 +217,24 @@ extension HomeView {
         VStack(alignment: .leading, spacing: 8) {
             
             ZStack(alignment: .topLeading) {
-                
-                Image("doctor_placeholder")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 220, height: 220)
-                    .clipped()
-                    .cornerRadius(24)
+                //  image doctor
+                if UIImage(named: "doctor_placeholder") != nil {
+                    Image("doctor_placeholder")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 220, height: 220)
+                        .clipped()
+                        .cornerRadius(24)
+                } else {
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(Color(#colorLiteral(red: 0.88, green: 0.94, blue: 0.98, alpha: 1)))
+                        .frame(width: 220, height: 220)
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 60))
+                                .foregroundColor(Color(#colorLiteral(red: 0.36, green: 0.62, blue: 0.86, alpha: 1)))
+                        )
+                }
                 
                 Text("⭐ 5.0")
                     .font(.caption)
@@ -231,79 +255,6 @@ extension HomeView {
     }
 }
 
-// MARK: - Fixed Bottom Overlays
-extension HomeView {
-
-    // Dark "Need directions?" bar — fixed, not scrolling
-    var directionsBar: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "paperplane.fill")
-                .font(.system(size: 18))
-                .foregroundColor(.white)
-                .padding(10)
-                .background(Color.blue)
-                .clipShape(Circle())
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Need directions?")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
-                Text("Find your way inside the clinic")
-                    .font(.system(size: 11))
-                    .foregroundColor(.white.opacity(0.6))
-            }
-
-            Spacer()
-
-            Image(systemName: "arrow.right")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.white.opacity(0.7))
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(Color.black.opacity(0.85))
-        .cornerRadius(20)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 2)
-    }
-
-    // Floating glass nav bar — near phone edge
-    var floatingNavBar: some View {
-        HStack(spacing: 0) {
-            navItem(icon: "house.fill", label: "Home", index: 0)
-            navItem(icon: "square.grid.2x2.fill", label: "Services", index: 1)
-            navItem(icon: "calendar", label: "Appointments", index: 2)
-            navItem(icon: "location.fill", label: "Navigation", index: 3)
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 10)
-        .padding(.bottom, 6)
-        .background(
-            .ultraThinMaterial,
-            in: RoundedRectangle(cornerRadius: 30)
-        )
-        .shadow(color: Color.black.opacity(0.12), radius: 20, x: 0, y: 4)
-        .padding(.horizontal, 8)
-        .padding(.bottom, 2)
-    }
-
-    func navItem(icon: String, label: String, index: Int) -> some View {
-        let isSelected: Bool = selectedTab == index
-        return Button {
-            selectedTab = index
-        } label: {
-            VStack(spacing: 3) {
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(isSelected ? .blue : .gray)
-                Text(label)
-                    .font(.system(size: 9, weight: isSelected ? .semibold : .regular))
-                    .foregroundColor(isSelected ? .blue : .gray)
-            }
-            .frame(maxWidth: .infinity)
-        }
-    }
-}
 
 #Preview {
     HomeView()

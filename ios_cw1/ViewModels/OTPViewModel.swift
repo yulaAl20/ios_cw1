@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 
+@MainActor
 final class OTPViewModel: ObservableObject {
     @Published var otpDigits: [String]
     @Published var isLoading = false
@@ -16,7 +17,7 @@ final class OTPViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var infoMessage: String?
 
-    private var timerCancellable: AnyCancellable?
+    private var timer: Timer?
     private let phoneNumber: String
     let digitCount: Int
 
@@ -27,48 +28,32 @@ final class OTPViewModel: ObservableObject {
         startTimer()
     }
 
-    deinit {
-        stopTimer()
-    }
-
-    // MARK: - Timer (Combine-based, runs on main RunLoop — no background threads)
+    // MARK: - Timer
 
     func startTimer() {
         secondsRemaining = 60
         stopTimer()
-        timerCancellable = Timer.publish(every: 1, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                guard let self else { return }
-                if self.secondsRemaining > 0 {
-                    self.secondsRemaining -= 1
-                } else {
-                    self.stopTimer()
-                }
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            if self.secondsRemaining > 0 {
+                self.secondsRemaining -= 1
+            } else {
+                self.stopTimer()
             }
+        }
     }
 
     func stopTimer() {
-        timerCancellable?.cancel()
-        timerCancellable = nil
+        timer?.invalidate()
+        timer = nil
     }
 
     // MARK: - Resend
 
     func resend() {
         guard secondsRemaining == 0 else { return }
-        isLoading = true
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            guard let self else { return }
-            self.isLoading = false
-            self.infoMessage = "OTP resent"
-            self.startTimer()
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-                self?.infoMessage = nil
-            }
-        }
+        infoMessage = "OTP resent"
+        startTimer()
     }
 
     // MARK: - Verify
@@ -84,22 +69,14 @@ final class OTPViewModel: ObservableObject {
             return
         }
 
-        isLoading = true
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self else { return }
-            self.isLoading = false
-
-            if code == self.correctOTP {
-                self.stopTimer()
-                completion(true)
-            } else {
-                self.errorMessage = "Wrong OTP. Please try again."
-                self.showingError = true
-                // Clear entered digits
-                self.otpDigits = Array(repeating: "", count: self.digitCount)
-                completion(false)
-            }
+        if code == correctOTP {
+            stopTimer()
+            completion(true)
+        } else {
+            errorMessage = "Wrong OTP. Please try again."
+            showingError = true
+            otpDigits = Array(repeating: "", count: digitCount)
+            completion(false)
         }
     }
 }

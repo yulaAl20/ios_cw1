@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 import LocalAuthentication
 import Combine
 import AuthenticationServices
@@ -21,7 +22,6 @@ class LoginViewModel: NSObject, ObservableObject {
     @Published var isFaceIDAvailable: Bool = false
     @Published var currentUser: User?
     
-    private var cancellables = Set<AnyCancellable>()
     private var webAuthSession: ASWebAuthenticationSession?
     
     override init() {
@@ -77,21 +77,16 @@ class LoginViewModel: NSObject, ObservableObject {
             return
         }
         
-        isLoading = true
+        isLoading = false
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            guard let self = self else { return }
-            self.isLoading = false
-            
-            self.currentUser = User(
-                id: UUID().uuidString,
-                name: "Registered User",
-                phoneNumber: "\(self.countryCode)\(self.phoneNumber)",
-                loginMethod: .phone
-            )
-            
-            self.isAuthenticated = true
-        }
+        currentUser = User(
+            id: UUID().uuidString,
+            name: "Registered User",
+            phoneNumber: "\(countryCode)\(phoneNumber)",
+            loginMethod: .phone
+        )
+        
+        isAuthenticated = true
     }
     
     // MARK: - Face ID Authentication
@@ -128,50 +123,54 @@ class LoginViewModel: NSObject, ObservableObject {
         // Evaluate policy
         context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Log in to Clinic Flow") { [weak self] success, authenticationError in
             DispatchQueue.main.async {
-                guard let self = self else { return }
-                self.isLoading = false
-                
-                if success {
-                    // Create user with Face ID authentication
-                    self.currentUser = User(
-                        id: UUID().uuidString,
-                        name: "Face ID User",
-                        phoneNumber: nil,
-                        loginMethod: .faceID
-                    )
-                    
-                    self.isAuthenticated = true
-                    print("Face ID authentication successful")
-                } else {
-                    if let error = authenticationError as? LAError {
-                        switch error.code {
-                        case .authenticationFailed:
-                            self.errorMessage = "Authentication failed. Please try again"
-                        case .userCancel:
-                            print("⚠️ User cancelled Face ID authentication")
-                            return // Don't show error for user cancellation
-                        case .userFallback:
-                            self.errorMessage = "User selected fallback authentication"
-                        case .systemCancel:
-                            print("⚠️ System cancelled Face ID authentication")
-                            return
-                        case .passcodeNotSet:
-                            self.errorMessage = "Passcode is not set on this device"
-                        case .biometryNotAvailable:
-                            self.errorMessage = "Biometric authentication is not available"
-                        case .biometryNotEnrolled:
-                            self.errorMessage = "No biometric data enrolled"
-                        case .biometryLockout:
-                            self.errorMessage = "Too many failed attempts. Please try again later"
-                        default:
-                            self.errorMessage = authenticationError?.localizedDescription ?? "Authentication failed"
-                        }
-                    } else {
-                        self.errorMessage = authenticationError?.localizedDescription ?? "Authentication failed"
-                    }
-                    self.showingAlert = true
-                }
+                guard let self else { return }
+                self.handleFaceIDResult(success: success, error: authenticationError)
             }
+        }
+    }
+    
+    private func handleFaceIDResult(success: Bool, error: Error?) {
+        isLoading = false
+        
+        if success {
+            // Create user with Face ID authentication
+            currentUser = User(
+                id: UUID().uuidString,
+                name: "Face ID User",
+                phoneNumber: nil,
+                loginMethod: .faceID
+            )
+            
+            isAuthenticated = true
+            print("Face ID authentication successful")
+        } else {
+            if let error = error as? LAError {
+                switch error.code {
+                case .authenticationFailed:
+                    errorMessage = "Authentication failed. Please try again"
+                case .userCancel:
+                    print("⚠️ User cancelled Face ID authentication")
+                    return // Don't show error for user cancellation
+                case .userFallback:
+                    errorMessage = "User selected fallback authentication"
+                case .systemCancel:
+                    print("⚠️ System cancelled Face ID authentication")
+                    return
+                case .passcodeNotSet:
+                    errorMessage = "Passcode is not set on this device"
+                case .biometryNotAvailable:
+                    errorMessage = "Biometric authentication is not available"
+                case .biometryNotEnrolled:
+                    errorMessage = "No biometric data enrolled"
+                case .biometryLockout:
+                    errorMessage = "Too many failed attempts. Please try again later"
+                default:
+                    errorMessage = error.localizedDescription
+                }
+            } else {
+                errorMessage = error?.localizedDescription ?? "Authentication failed"
+            }
+            showingAlert = true
         }
     }
     
@@ -218,38 +217,8 @@ class LoginViewModel: NSObject, ObservableObject {
         
         let session = ASWebAuthenticationSession(url: authURL, callbackURLScheme: callbackScheme) { [weak self] callbackURL, error in
             DispatchQueue.main.async {
-                guard let self = self else { return }
-                self.isLoading = false
-                
-                if let error = error as? ASWebAuthenticationSessionError,
-                   error.code == .canceledLogin {
-                    // User cancelled — don't show error
-                    return
-                }
-                
-                if let error = error {
-                    self.errorMessage = "Google Sign In failed: \(error.localizedDescription)"
-                    self.showingAlert = true
-                    return
-                }
-                
-                guard let callbackURL = callbackURL,
-                      let queryItems = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false)?.queryItems,
-                      let _ = queryItems.first(where: { $0.name == "code" })?.value else {
-                    self.errorMessage = "Google Sign In failed: No authorization code received"
-                    self.showingAlert = true
-                    return
-                }
-                
-                // Successfully received auth code — create user
-                self.currentUser = User(
-                    id: UUID().uuidString,
-                    name: "Google User",
-                    email: "user@gmail.com",
-                    phoneNumber: nil,
-                    loginMethod: .google
-                )
-                self.isAuthenticated = true
+                guard let self else { return }
+                self.handleGoogleResult(callbackURL: callbackURL, error: error)
             }
         }
         
@@ -259,27 +228,53 @@ class LoginViewModel: NSObject, ObservableObject {
         self.webAuthSession = session
     }
     
+    private func handleGoogleResult(callbackURL: URL?, error: Error?) {
+        isLoading = false
+        
+        if let error = error as? ASWebAuthenticationSessionError,
+           error.code == .canceledLogin {
+            // User cancelled — don't show error
+            return
+        }
+        
+        if let error = error {
+            errorMessage = "Google Sign In failed: \(error.localizedDescription)"
+            showingAlert = true
+            return
+        }
+        
+        guard let callbackURL = callbackURL,
+              let queryItems = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false)?.queryItems,
+              let _ = queryItems.first(where: { $0.name == "code" })?.value else {
+            errorMessage = "Google Sign In failed: No authorization code received"
+            showingAlert = true
+            return
+        }
+        
+        // Successfully received auth code — create user
+        currentUser = User(
+            id: UUID().uuidString,
+            name: "Google User",
+            email: "user@gmail.com",
+            phoneNumber: nil,
+            loginMethod: .google
+        )
+        isAuthenticated = true
+    }
+    
     // MARK: - Facebook Login
     func loginWithFacebook() {
-        isLoading = true
+        isLoading = false
         
-        // Simulate Facebook Sign In (In production, integrate Facebook SDK)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            guard let self = self else { return }
-            self.isLoading = false
-            
-            // Create user with Facebook authentication
-            self.currentUser = User(
-                id: UUID().uuidString,
-                name: "Facebook User",
-                email: "user@facebook.com",
-                phoneNumber: nil,
-                loginMethod: .facebook
-            )
-            
-            self.isAuthenticated = true
-            print("✅ Facebook login successful")
-        }
+        currentUser = User(
+            id: UUID().uuidString,
+            name: "Facebook User",
+            email: "user@facebook.com",
+            phoneNumber: nil,
+            loginMethod: .facebook
+        )
+        
+        isAuthenticated = true
     }
     
     // MARK: - Guest Mode
@@ -292,7 +287,6 @@ class LoginViewModel: NSObject, ObservableObject {
         )
         
         isAuthenticated = true
-        print("✅ Continuing as guest")
     }
     
     // MARK: - Logout
@@ -300,7 +294,6 @@ class LoginViewModel: NSObject, ObservableObject {
         isAuthenticated = false
         currentUser = nil
         phoneNumber = ""
-        print("👋 User logged out")
     }
     
     // MARK: - Helper Methods
@@ -308,90 +301,70 @@ class LoginViewModel: NSObject, ObservableObject {
         let context = LAContext()
         var error: NSError?
         isFaceIDAvailable = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
-        
-        if isFaceIDAvailable {
-            print("✅ Biometric authentication available")
-        } else {
-            print("⚠️ Biometric authentication not available: \(error?.localizedDescription ?? "Unknown error")")
-        }
     }
 }
 
 // MARK: - ASAuthorizationControllerDelegate
 extension LoginViewModel: ASAuthorizationControllerDelegate {
-    nonisolated func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
-        Task { @MainActor in
-            isLoading = false
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        isLoading = false
+        
+        if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
+            let userID = appleIDCredential.user
+            let fullName = appleIDCredential.fullName
+            let email = appleIDCredential.email
             
-            if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
-                let userID = appleIDCredential.user
-                let fullName = appleIDCredential.fullName
-                let email = appleIDCredential.email
-                
-                let userName = [fullName?.givenName, fullName?.familyName]
-                    .compactMap { $0 }
-                    .joined(separator: " ")
-                
-                // Create user with Apple authentication
-                currentUser = User(
-                    id: userID,
-                    name: userName.isEmpty ? "Apple User" : userName,
-                    email: email,
-                    phoneNumber: nil,
-                    loginMethod: .apple
-                )
-                
-                isAuthenticated = true
-                print("Apple Sign In successful - User ID: \(userID)")
-                print("   Name: \(userName)")
-                print("   Email: \(email ?? "Not provided")")
-            }
+            let userName = [fullName?.givenName, fullName?.familyName]
+                .compactMap { $0 }
+                .joined(separator: " ")
+            
+            currentUser = User(
+                id: userID,
+                name: userName.isEmpty ? "Apple User" : userName,
+                email: email,
+                phoneNumber: nil,
+                loginMethod: .apple
+            )
+            
+            isAuthenticated = true
+            print("Apple Sign In successful - User ID: \(userID)")
+            print("   Name: \(userName)")
+            print("   Email: \(email ?? "Not provided")")
         }
     }
     
-    nonisolated func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
-        Task { @MainActor in
-            isLoading = false
-            
-            let authError = error as NSError
-            // Don't show alert for user cancellation
-            if authError.code == ASAuthorizationError.canceled.rawValue {
-                print("⚠️ Apple Sign In cancelled by user")
-                return
-            }
-            
-            errorMessage = "Apple Sign In failed: \(error.localizedDescription)"
-            showingAlert = true
-            print("Apple Sign In error: \(error.localizedDescription)")
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        isLoading = false
+        
+        let authError = error as NSError
+        if authError.code == ASAuthorizationError.canceled.rawValue {
+            print("⚠️ Apple Sign In cancelled by user")
+            return
         }
+        
+        errorMessage = "Apple Sign In failed: \(error.localizedDescription)"
+        showingAlert = true
+        print("Apple Sign In error: \(error.localizedDescription)")
     }
 }
 
 // MARK: - ASAuthorizationControllerPresentationContextProviding & ASWebAuthenticationPresentationContextProviding
 extension LoginViewModel: ASAuthorizationControllerPresentationContextProviding {
-    nonisolated func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        return MainActor.assumeIsolated {
-            let scenes = UIApplication.shared.connectedScenes
-            if let windowScene = scenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
-               let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
-                return window
-            }
-            let fallbackScene = scenes.compactMap { $0 as? UIWindowScene }.first!
-            return UIWindow(windowScene: fallbackScene)
-        }
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        let scene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+            ?? UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first!
+        return scene.windows.first(where: { $0.isKeyWindow }) ?? UIWindow(windowScene: scene)
     }
 }
 
 extension LoginViewModel: ASWebAuthenticationPresentationContextProviding {
-    nonisolated func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        return MainActor.assumeIsolated {
-            let scenes = UIApplication.shared.connectedScenes
-            if let windowScene = scenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
-               let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
-                return window
-            }
-            let fallbackScene = scenes.compactMap { $0 as? UIWindowScene }.first!
-            return UIWindow(windowScene: fallbackScene)
-        }
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        let scene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+            ?? UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first!
+        return scene.windows.first(where: { $0.isKeyWindow }) ?? UIWindow(windowScene: scene)
     }
 }

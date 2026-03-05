@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Foundation
+import UIKit
 import LocalAuthentication
 import Combine
 import AuthenticationServices
@@ -45,13 +46,8 @@ class SignUpViewModel: NSObject, ObservableObject {
             return
         }
 
-        isLoading = true
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
-            self?.isLoading = false
-            print("Account created for: \(self?.callingName ?? "") with phone: \(self?.countryCode ?? "")\(self?.phoneNumber ?? "")")
-            self?.showingSuccessAlert = true
-        }
+        isLoading = false
+        showingSuccessAlert = true
     }
 
     func continueAsGuest() {
@@ -104,34 +100,7 @@ class SignUpViewModel: NSObject, ObservableObject {
         let session = ASWebAuthenticationSession(url: authURL, callbackURLScheme: callbackScheme) { [weak self] callbackURL, error in
             DispatchQueue.main.async {
                 guard let self else { return }
-                self.isLoading = false
-
-                if let error = error as? ASWebAuthenticationSessionError,
-                   error.code == .canceledLogin {
-                    return
-                }
-
-                if let error = error {
-                    self.showError("Google Sign Up failed: \(error.localizedDescription)")
-                    return
-                }
-
-                guard let callbackURL = callbackURL,
-                      let queryItems = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false)?.queryItems,
-                      let _ = queryItems.first(where: { $0.name == "code" })?.value else {
-                    self.showError("Google Sign Up failed: No authorization code received")
-                    return
-                }
-
-                self.currentUser = User(
-                    id: UUID().uuidString,
-                    name: "Google User",
-                    email: "user@gmail.com",
-                    phoneNumber: nil,
-                    loginMethod: .google
-                )
-                self.isAuthenticated = true
-                self.showingSuccessAlert = true
+                self.handleGoogleResult(callbackURL: callbackURL, error: error)
             }
         }
 
@@ -140,23 +109,50 @@ class SignUpViewModel: NSObject, ObservableObject {
         session.start()
         self.webAuthSession = session
     }
+    
+    private func handleGoogleResult(callbackURL: URL?, error: Error?) {
+        isLoading = false
+
+        if let error = error as? ASWebAuthenticationSessionError,
+           error.code == .canceledLogin {
+            return
+        }
+
+        if let error = error {
+            showError("Google Sign Up failed: \(error.localizedDescription)")
+            return
+        }
+
+        guard let callbackURL = callbackURL,
+              let queryItems = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false)?.queryItems,
+              let _ = queryItems.first(where: { $0.name == "code" })?.value else {
+            showError("Google Sign Up failed: No authorization code received")
+            return
+        }
+
+        currentUser = User(
+            id: UUID().uuidString,
+            name: "Google User",
+            email: "user@gmail.com",
+            phoneNumber: nil,
+            loginMethod: .google
+        )
+        isAuthenticated = true
+        showingSuccessAlert = true
+    }
 
     // MARK: - Facebook Sign Up
     func signUpWithFacebook() {
-        isLoading = true
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-            self?.isLoading = false
-            self?.currentUser = User(
-                id: UUID().uuidString,
-                name: "Facebook User",
-                email: "user@facebook.com",
-                phoneNumber: nil,
-                loginMethod: .facebook
-            )
-            self?.isAuthenticated = true
-            self?.showingSuccessAlert = true
-        }
+        isLoading = false
+        currentUser = User(
+            id: UUID().uuidString,
+            name: "Facebook User",
+            email: "user@facebook.com",
+            phoneNumber: nil,
+            loginMethod: .facebook
+        )
+        isAuthenticated = true
+        showingSuccessAlert = true
     }
 
     private func showError(_ message: String) {
@@ -167,72 +163,60 @@ class SignUpViewModel: NSObject, ObservableObject {
 
 // MARK: - ASAuthorizationControllerDelegate
 extension SignUpViewModel: ASAuthorizationControllerDelegate {
-    nonisolated func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
-        Task { @MainActor in
-            isLoading = false
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        isLoading = false
 
-            if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
-                let userID = appleIDCredential.user
-                let fullName = appleIDCredential.fullName
-                let email = appleIDCredential.email
+        if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
+            let userID = appleIDCredential.user
+            let fullName = appleIDCredential.fullName
+            let email = appleIDCredential.email
 
-                let userName = [fullName?.givenName, fullName?.familyName]
-                    .compactMap { $0 }
-                    .joined(separator: " ")
+            let userName = [fullName?.givenName, fullName?.familyName]
+                .compactMap { $0 }
+                .joined(separator: " ")
 
-                currentUser = User(
-                    id: userID,
-                    name: userName.isEmpty ? "Apple User" : userName,
-                    email: email,
-                    phoneNumber: nil,
-                    loginMethod: .apple
-                )
-                isAuthenticated = true
-                showingSuccessAlert = true
-            }
+            currentUser = User(
+                id: userID,
+                name: userName.isEmpty ? "Apple User" : userName,
+                email: email,
+                phoneNumber: nil,
+                loginMethod: .apple
+            )
+            isAuthenticated = true
+            showingSuccessAlert = true
         }
     }
 
-    nonisolated func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
-        Task { @MainActor in
-            isLoading = false
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        isLoading = false
 
-            let authError = error as NSError
-            if authError.code == ASAuthorizationError.canceled.rawValue {
-                return
-            }
-
-            errorMessage = "Apple Sign Up failed: \(error.localizedDescription)"
-            showingAlert = true
+        let authError = error as NSError
+        if authError.code == ASAuthorizationError.canceled.rawValue {
+            return
         }
+
+        errorMessage = "Apple Sign Up failed: \(error.localizedDescription)"
+        showingAlert = true
     }
 }
 
 // MARK: - ASAuthorizationControllerPresentationContextProviding & ASWebAuthenticationPresentationContextProviding
 extension SignUpViewModel: ASAuthorizationControllerPresentationContextProviding {
-    nonisolated func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        return MainActor.assumeIsolated {
-            let scenes = UIApplication.shared.connectedScenes
-            if let windowScene = scenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
-               let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
-                return window
-            }
-            let fallbackScene = scenes.compactMap { $0 as? UIWindowScene }.first!
-            return UIWindow(windowScene: fallbackScene)
-        }
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        let scene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+            ?? UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first!
+        return scene.windows.first(where: { $0.isKeyWindow }) ?? UIWindow(windowScene: scene)
     }
 }
 
 extension SignUpViewModel: ASWebAuthenticationPresentationContextProviding {
-    nonisolated func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        return MainActor.assumeIsolated {
-            let scenes = UIApplication.shared.connectedScenes
-            if let windowScene = scenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
-               let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
-                return window
-            }
-            let fallbackScene = scenes.compactMap { $0 as? UIWindowScene }.first!
-            return UIWindow(windowScene: fallbackScene)
-        }
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        let scene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+            ?? UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first!
+        return scene.windows.first(where: { $0.isKeyWindow }) ?? UIWindow(windowScene: scene)
     }
 }
