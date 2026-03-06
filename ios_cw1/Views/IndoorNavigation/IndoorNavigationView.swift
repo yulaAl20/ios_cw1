@@ -7,6 +7,126 @@
 
 import SwiftUI
 
+struct NavigationRoute {
+    let start: String
+    let end: String
+    let floor: String
+    let distance: Int
+    let estimatedTime: Int
+    let steps: [NavigationStep]
+    let pathLocations: [String]
+    
+    static func getRoute(from start: String, to end: String, floor: String) -> NavigationRoute? {
+        let allRoutes = getAllRoutes()
+        return allRoutes.first { route in
+            (route.start == start && route.end == end && route.floor == floor) ||
+            (route.start == end && route.end == start && route.floor == floor)
+        }
+    }
+    
+    static func getAllRoutes() -> [NavigationRoute] {
+        return [
+            NavigationRoute(
+                start: "Reception",
+                end: "Waiting Area",
+                floor: "Floor 1",
+                distance: 35,
+                estimatedTime: 2,
+                steps: [
+                    NavigationStep(instruction: "Start from Reception desk", stepNumber: 1, distance: 0),
+                    NavigationStep(instruction: "Walk down the left corridor", stepNumber: 2, distance: 20),
+                    NavigationStep(instruction: "Waiting Area is on your left", stepNumber: 3, distance: 15)
+                ],
+                pathLocations: ["Reception", "Waiting Area"]
+                
+            ),
+            
+            NavigationRoute(
+                start: "Reception",
+                end: "Elevator",
+                floor: "Floor 1",
+                distance: 50,
+                estimatedTime: 2,
+                steps: [
+                    NavigationStep(instruction: "Walk straight ahead from the Main Entrance", stepNumber: 1, distance: 10),
+                    NavigationStep(instruction: "Continue past the Waiting Area", stepNumber: 2, distance: 15),
+                    NavigationStep(instruction: "The Registration Counter will be in front of you", stepNumber: 3, distance: 10),
+                    NavigationStep(instruction: "Turn right and walk to the Elevator", stepNumber: 4, distance: 15)
+                ],
+                pathLocations: ["Reception", "Waiting Area", "Nurse Stn", "Elevator"]
+            ),
+            
+            NavigationRoute(
+                start: "Room 201",
+                end: "Elevator",
+                floor: "Floor 2",
+                distance: 40,
+                estimatedTime: 2,
+                steps: [
+                    NavigationStep(instruction: "Exit Room 201 and turn right", stepNumber: 1, distance: 5),
+                    NavigationStep(instruction: "Walk straight down the corridor", stepNumber: 2, distance: 15),
+                    NavigationStep(instruction: "Pass the Cardiology department", stepNumber: 3, distance: 10),
+                    NavigationStep(instruction: "Elevator is ahead on your right", stepNumber: 4, distance: 10)
+                ],
+                pathLocations: ["Room 201", "Cardiology", "Pediatrics", "Elevator"]
+            ),
+            
+            NavigationRoute(
+                start: "Cardiology",
+                end: "Orthopedics",
+                floor: "Floor 2",
+                distance: 55,
+                estimatedTime: 2,
+                steps: [
+                    NavigationStep(instruction: "Exit Cardiology department", stepNumber: 1, distance: 0),
+                    NavigationStep(instruction: "Turn left and walk to Pediatrics", stepNumber: 2, distance: 20),
+                    NavigationStep(instruction: "Continue past Neurology department", stepNumber: 3, distance: 20),
+                    NavigationStep(instruction: "Orthopedics is at the end of corridor", stepNumber: 4, distance: 15)
+                ],
+                pathLocations: ["Cardiology", "Pediatrics", "Neurology", "Orthopedics"]
+            ),
+            
+            NavigationRoute(
+                start: "Main Lab",
+                end: "Cafeteria",
+                floor: "Floor 3",
+                distance: 70,
+                estimatedTime: 3,
+                steps: [
+                    NavigationStep(instruction: "Leave Main Lab and turn left", stepNumber: 1, distance: 5),
+                    NavigationStep(instruction: "Walk past X-Ray and MRI rooms", stepNumber: 2, distance: 20),
+                    NavigationStep(instruction: "Continue past Blood Bank", stepNumber: 3, distance: 15),
+                    NavigationStep(instruction: "Pass CT Scan and Pathology", stepNumber: 4, distance: 20),
+                    NavigationStep(instruction: "Cafeteria entrance on your left", stepNumber: 5, distance: 10)
+                ],
+                pathLocations: ["Main Lab", "Blood Bank", "CT Scan", "Pathology", "Cafeteria"]
+            ),
+            
+            NavigationRoute(
+                start: "X-Ray",
+                end: "Elevator",
+                floor: "Floor 3",
+                distance: 45,
+                estimatedTime: 2,
+                steps: [
+                    NavigationStep(instruction: "Exit X-Ray room", stepNumber: 1, distance: 0),
+                    NavigationStep(instruction: "Walk down the main corridor", stepNumber: 2, distance: 15),
+                    NavigationStep(instruction: "Pass CT Scan on your right", stepNumber: 3, distance: 15),
+                    NavigationStep(instruction: "Elevator is at the end", stepNumber: 4, distance: 15)
+                ],
+                pathLocations: ["X-Ray", "CT Scan", "Ultrasound", "Elevator"]
+            )
+        ]
+    }
+}
+
+struct NavigationStep: Identifiable {
+    let id = UUID()
+    let instruction: String
+    let stepNumber: Int
+    let distance: Int
+}
+
 struct IndoorNavigationView: View {
     
     @State private var selectedTab: Int = 3
@@ -47,10 +167,6 @@ struct IndoorNavigationView: View {
                         Room(name: "Emergency Dept", isWide: true),
                         Room(name: "Nurse Stn"),
                         Room(name: "Elevator")
-                    ]),
-                    FloorRow(entrance: "Entrance 2", rooms: [
-                        Room(name: "Waiting Area\nB", isWide: true),
-                        Room(name: "Restroom")
                     ]),
                     FloorRow(rooms: [
                         Room(name: "Pharmacy", isWide: true),
@@ -137,10 +253,6 @@ struct IndoorNavigationView: View {
                         Room(name: "Emergency Dept", isWide: true),
                         Room(name: "Nurse Stn"),
                         Room(name: "Elevator")
-                    ]),
-                    FloorRow(entrance: "Entrance 2", rooms: [
-                        Room(name: "Waiting Area\nB", isWide: true),
-                        Room(name: "Restroom")
                     ]),
                     FloorRow(rooms: [
                         Room(name: "Pharmacy", isWide: true),
@@ -316,31 +428,15 @@ struct IndoorNavigationView: View {
                                 }
                             }
                             
-                            VStack(spacing: 12) {
-                                ForEach(currentFloorData.rows) { row in
-                                    HStack(alignment: .center, spacing: 8) {
-                                        if let entrance = row.entrance {
-                                            HStack(spacing: 4) {
-                                                Text(entrance)
-                                                    .font(.system(size: 13, weight: .medium))
-                                                    .foregroundColor(.secondary)
-                                                
-                                                Image(systemName: "arrow.right")
-                                                    .font(.system(size: 12))
-                                                    .foregroundColor(.secondary)
-                                            }
-                                            .frame(width: 80, alignment: .leading)
-                                        } else {
-                                            Spacer()
-                                                .frame(width: 88)
-                                        }
-                                        
-                                        ForEach(row.rooms) { room in
-                                            buildLocationBox(room.name, isWide: room.isWide)
-                                        }
-                                    }
+                            GeometryReader { geo in
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color(.systemGray6))
+                                    
+                                    drawFloorMap(width: geo.size.width, height: geo.size.height)
                                 }
                             }
+                            .frame(height: 500)
                         }
                         .padding(.horizontal, 20)
                         
@@ -458,52 +554,353 @@ struct IndoorNavigationView: View {
         }
     }
     
-    private func buildLocationBox(_ name: String, isWide: Bool = false) -> some View {
-        let isStart = (name == startLocation)
-        let isEnd = (name == destination)
-        let isOnPath = currentRoute?.pathLocations.contains(name) ?? false
-        let shouldHighlight = isStart || isEnd || (hasValidRoute && isOnPath)
+    private func drawFloorMap(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            drawCorridors(width: width, height: height)
+            
+            if hasValidRoute, let route = currentRoute {
+                drawNavigationPath(route: route, width: width, height: height)
+            }
+            
+            drawLocationChips(width: width, height: height)
+        }
+    }
+    
+    private func drawCorridors(width: CGFloat, height: CGFloat) -> some View {
+        
+        let mainVertical = width * 0.12
+        let subVertical = width * 0.05
+        
+        let mainHorizontal = height * 0.1
+        let subHorizontal = height * 0.04
         
         return ZStack {
-            Text(name)
-                .font(.system(size: 13, weight: shouldHighlight ? .semibold : .medium))
-                .foregroundColor(shouldHighlight ? .primary : Color.primary.opacity(0.7))
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-                .frame(height: isWide ? 54 : 48)
-                .background(shouldHighlight ? Color.green.opacity(0.25) : Color(.systemGray6).opacity(0.6))
-                .cornerRadius(12)
-                .frame(minWidth: isWide ? 140 : nil)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(shouldHighlight ? Color.green : Color.clear, lineWidth: 2)
-                )
             
-            if isStart {
-                VStack {
-                    HStack {
-                        Spacer()
-                        Circle()
-                            .fill(Color.blue)
-                            .frame(width: 10, height: 10)
-                            .padding(4)
+            // MARK: MAIN VERTICAL CORRIDORS
+            
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(.systemGray5))
+                .frame(width: mainVertical, height: height * 0.9)
+                .position(x: width * 0.5, y: height * 0.5)
+            
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(.systemGray5))
+                .frame(width: mainVertical, height: height * 0.9)
+                .position(x: width * 0.25, y: height * 0.5)
+            
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(.systemGray5))
+                .frame(width: mainVertical, height: height * 0.9)
+                .position(x: width * 0.75, y: height * 0.5)
+            
+            
+            // MARK: MAIN HORIZONTAL CORRIDORS
+            
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(.systemGray5))
+                .frame(width: width * 0.85, height: mainHorizontal)
+                .position(x: width * 0.5, y: height * 0.2)
+            
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(.systemGray5))
+                .frame(width: width * 0.85, height: mainHorizontal)
+                .position(x: width * 0.5, y: height * 0.5)
+            
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(.systemGray5))
+                .frame(width: width * 0.85, height: mainHorizontal)
+                .position(x: width * 0.5, y: height * 0.8)
+            
+            
+            // MARK: SUB CORRIDORS (THIN)
+            
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color(.systemGray4))
+                .frame(width: subVertical, height: height * 0.35)
+                .position(x: width * 0.62, y: height * 0.32)
+            
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color(.systemGray4))
+                .frame(width: subVertical, height: height * 0.35)
+                .position(x: width * 0.38, y: height * 0.68)
+            
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color(.systemGray4))
+                .frame(width: width * 0.4, height: subHorizontal)
+                .position(x: width * 0.3, y: height * 0.35)
+            
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color(.systemGray4))
+                .frame(width: width * 0.4, height: subHorizontal)
+                .position(x: width * 0.7, y: height * 0.65)
+            
+            
+            // MARK: ENTRANCE
+            
+            if selectedFloor == "Floor 1" {
+                HStack(spacing: 4) {
+                    Image(systemName: "door.left.hand.open")
+                        .font(.system(size: 12))
+                        .foregroundColor(.green)
+                    
+                    Text("Entrance")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.green)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.green.opacity(0.15))
+                .cornerRadius(6)
+                .position(x: width * 0.12, y: height * 0.2)
+            }
+        }
+    }
+    
+    private func drawNavigationPath(route: NavigationRoute, width: CGFloat, height: CGFloat) -> some View {
+        
+        let positions = getLocationPositions(width: width, height: height)
+        
+        return ZStack {
+            
+            if route.start == "Reception" && route.end == "Waiting Area" {
+                
+                if let start = positions["Reception"],
+                   let end = positions["Waiting Area"] {
+                    
+                    Path { path in
+                        
+                        path.move(to: start)
+                        
+                        path.addLine(to: CGPoint(x: width * 0.5, y: height * 0.2))
+                        
+                        path.addLine(to: CGPoint(x: width * 0.25, y: height * 0.2))
+                        
+                        path.addLine(to: CGPoint(x: width * 0.25, y: height * 0.32))
+                        
+                        path.addLine(to: end)
                     }
-                    Spacer()
+                    .stroke(
+                        Color.blue,
+                        style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                    )
                 }
             }
             
-            if isEnd {
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        Image(systemName: "mappin.circle.fill")
-                            .font(.system(size: 16))
-                            .foregroundColor(.red)
-                            .padding(4)
+            if let start = positions[route.start] {
+                Circle()
+                    .fill(Color.blue)
+                    .frame(width: 12, height: 12)
+                    .position(start)
+            }
+            
+            if let end = positions[route.end] {
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 12, height: 12)
+                    .position(end)
+            }
+        }
+    }
+    
+    private func drawLocationChips(width: CGFloat, height: CGFloat) -> some View {
+        let positions = getLocationPositions(width: width, height: height)
+        let locations = getAllCurrentFloorLocations()
+        
+        return ZStack {
+            ForEach(locations, id: \.self) { location in
+                if let pos = positions[location] {
+                    let isStart = location == startLocation
+                    let isEnd = location == destination
+                    let isOnPath = currentRoute?.pathLocations.contains(location) ?? false
+                    
+                    HStack(spacing: 4) {
+                        Image(systemName: getLocationIcon(for: location))
+                            .font(.system(size: 8))
+                            .foregroundColor(isStart ? .blue : (isEnd ? .red : .secondary))
+                        
+                        Text(location.replacingOccurrences(of: "\n", with: " "))
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
                     }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(isStart ? Color.blue.opacity(0.15) : (isEnd ? Color.red.opacity(0.15) : Color.white))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(
+                                        isStart ? Color.blue : (isEnd ? Color.red : (isOnPath ? Color.blue.opacity(0.5) : Color(.systemGray4))),
+                                        lineWidth: isStart || isEnd ? 1.5 : 1
+                                    )
+                            )
+                    )
+                    .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+                    .position(pos)
                 }
             }
+        }
+    }
+    
+    private func getLocationPositions(width: CGFloat, height: CGFloat) -> [String: CGPoint] {
+        
+        switch selectedFloor {
+            
+        // MARK: FLOOR 1
+        case "Floor 1":
+            return [
+                
+                // Top horizontal corridor
+                "Reception": CGPoint(x: width * 0.5, y: height * 0.15),
+                "Registration": CGPoint(x: width * 0.65, y: height * 0.15),
+                "Records": CGPoint(x: width * 0.82, y: height * 0.15),
+                
+                // Left vertical corridor
+                "Waiting Area": CGPoint(x: width * 0.18, y: height * 0.32),
+                "Restroom": CGPoint(x: width * 0.18, y: height * 0.50),
+                
+                // Middle main corridor
+                "Emergency Dept": CGPoint(x: width * 0.35, y: height * 0.50),
+                "Nurse Stn": CGPoint(x: width * 0.50, y: height * 0.40),
+                
+                // Right corridor
+                "Elevator": CGPoint(x: width * 0.82, y: height * 0.50),
+                
+                // Bottom corridor
+                "Pharmacy": CGPoint(x: width * 0.50, y: height * 0.88),
+                "Billing": CGPoint(x: width * 0.82, y: height * 0.80)
+            ]
+            
+            
+        // MARK: FLOOR 2
+        case "Floor 2":
+            return [
+                
+                // Top corridor rooms
+                "Room 201": CGPoint(x: width * 0.18, y: height * 0.15),
+                "Room 202": CGPoint(x: width * 0.35, y: height * 0.15),
+                "Room 203": CGPoint(x: width * 0.52, y: height * 0.15),
+                "Vitals": CGPoint(x: width * 0.70, y: height * 0.15),
+                
+                // Middle corridor
+                "Cardiology": CGPoint(x: width * 0.35, y: height * 0.40),
+                "Nurses' Stn": CGPoint(x: width * 0.50, y: height * 0.32),
+                
+                // Sub corridor rooms
+                "Pediatrics": CGPoint(x: width * 0.35, y: height * 0.58),
+                "Restroom": CGPoint(x: width * 0.18, y: height * 0.50),
+                
+                // Main corridor
+                "Elevator": CGPoint(x: width * 0.82, y: height * 0.50),
+                
+                // Bottom corridor
+                "Neurology": CGPoint(x: width * 0.50, y: height * 0.72),
+                "Waiting Area": CGPoint(x: width * 0.82, y: height * 0.72),
+                
+                "Orthopedics": CGPoint(x: width * 0.35, y: height * 0.88),
+                "Records": CGPoint(x: width * 0.70, y: height * 0.88)
+            ]
+            
+            
+        // MARK: FLOOR 3
+        case "Floor 3":
+            return [
+                
+                // Top corridor
+                "Main Lab": CGPoint(x: width * 0.25, y: height * 0.15),
+                "X-Ray": CGPoint(x: width * 0.50, y: height * 0.15),
+                "MRI Scan": CGPoint(x: width * 0.75, y: height * 0.15),
+                
+                "Records": CGPoint(x: width * 0.88, y: height * 0.30),
+                
+                // Middle corridor
+                "Blood Bank": CGPoint(x: width * 0.35, y: height * 0.40),
+                "Sample Room": CGPoint(x: width * 0.65, y: height * 0.40),
+                
+                // Sub corridor
+                "CT Scan": CGPoint(x: width * 0.35, y: height * 0.58),
+                "Ultrasound": CGPoint(x: width * 0.50, y: height * 0.50),
+                
+                // Main corridor
+                "Elevator": CGPoint(x: width * 0.82, y: height * 0.58),
+                
+                // Bottom corridor
+                "Pathology": CGPoint(x: width * 0.50, y: height * 0.72),
+                "Restroom": CGPoint(x: width * 0.18, y: height * 0.72),
+                
+                "Cafeteria": CGPoint(x: width * 0.35, y: height * 0.88),
+                "Billing": CGPoint(x: width * 0.70, y: height * 0.88)
+            ]
+            
+        default:
+            return [:]
+        }
+    }
+    
+    private func getCorridorNodes(width: CGFloat, height: CGFloat) -> [String: CGPoint] {
+        
+        return [
+            "topCenter": CGPoint(x: width * 0.5, y: height * 0.2),
+            "midCenter": CGPoint(x: width * 0.5, y: height * 0.5),
+            "bottomCenter": CGPoint(x: width * 0.5, y: height * 0.8),
+            
+            "leftMid": CGPoint(x: width * 0.25, y: height * 0.5),
+            "rightMid": CGPoint(x: width * 0.75, y: height * 0.5),
+            
+            "leftTop": CGPoint(x: width * 0.25, y: height * 0.2),
+            "rightTop": CGPoint(x: width * 0.75, y: height * 0.2),
+            
+            "leftBottom": CGPoint(x: width * 0.25, y: height * 0.8),
+            "rightBottom": CGPoint(x: width * 0.75, y: height * 0.8)
+        ]
+    }
+    
+    private func getAllCurrentFloorLocations() -> [String] {
+        return currentFloorData.rows.flatMap { row in
+            row.rooms.map { $0.name }
+        }
+    }
+    
+    private func getLocationIcon(for location: String) -> String {
+        let name = location.lowercased()
+        
+        if name.contains("elevator") {
+            return "arrow.up.arrow.down.circle"
+        } else if name.contains("restroom") {
+            return "toilet"
+        } else if name.contains("pharmacy") {
+            return "cross.case"
+        } else if name.contains("emergency") {
+            return "cross.circle"
+        } else if name.contains("lab") || name.contains("blood") {
+            return "drop"
+        } else if name.contains("x-ray") || name.contains("mri") || name.contains("ct") {
+            return "waveform"
+        } else if name.contains("cafeteria") {
+            return "fork.knife"
+        } else if name.contains("waiting") {
+            return "person.2"
+        } else if name.contains("reception") || name.contains("registration") {
+            return "person.circle"
+        } else if name.contains("billing") {
+            return "creditcard"
+        } else if name.contains("records") {
+            return "doc"
+        } else if name.contains("nurse") {
+            return "stethoscope"
+        } else if name.contains("room") || name.contains("cardiology") || name.contains("pediatrics") || name.contains("neurology") || name.contains("orthopedics") {
+            return "bed.double"
+        } else if name.contains("vitals") {
+            return "heart.circle"
+        } else if name.contains("sample") {
+            return "eyedropper"
+        } else if name.contains("ultrasound") {
+            return "waveform.circle"
+        } else if name.contains("pathology") {
+            return "testtube.2"
+        } else {
+            return "mappin"
         }
     }
 }
@@ -533,127 +930,6 @@ struct Room: Identifiable {
         self.name = name
         self.isWide = isWide
     }
-}
-
-struct NavigationRoute {
-    let start: String
-    let end: String
-    let floor: String
-    let distance: Int
-    let estimatedTime: Int
-    let steps: [NavigationStep]
-    let pathLocations: [String]
-    
-    static func getRoute(from start: String, to end: String, floor: String) -> NavigationRoute? {
-        let allRoutes = getAllRoutes()
-        return allRoutes.first { route in
-            (route.start == start && route.end == end && route.floor == floor) ||
-            (route.start == end && route.end == start && route.floor == floor)
-        }
-    }
-    
-    static func getAllRoutes() -> [NavigationRoute] {
-        return [
-            NavigationRoute(
-                start: "Reception",
-                end: "Elevator",
-                floor: "Floor 1",
-                distance: 50,
-                estimatedTime: 2,
-                steps: [
-                    NavigationStep(instruction: "Walk straight ahead from the Main Entrance", stepNumber: 1, distance: 10),
-                    NavigationStep(instruction: "Continue past the Waiting Area", stepNumber: 2, distance: 15),
-                    NavigationStep(instruction: "The Registration Counter will be in front of you", stepNumber: 3, distance: 10),
-                    NavigationStep(instruction: "Turn right and walk to the Elevator", stepNumber: 4, distance: 15)
-                ],
-                pathLocations: ["Reception", "Waiting Area", "Nurse Stn", "Elevator"]
-            ),
-            
-            NavigationRoute(
-                start: "Reception",
-                end: "Pharmacy",
-                floor: "Floor 1",
-                distance: 65,
-                estimatedTime: 3,
-                steps: [
-                    NavigationStep(instruction: "Start from Reception desk", stepNumber: 1, distance: 0),
-                    NavigationStep(instruction: "Walk past the Waiting Area on your left", stepNumber: 2, distance: 20),
-                    NavigationStep(instruction: "Continue past Emergency Department", stepNumber: 3, distance: 25),
-                    NavigationStep(instruction: "Pass Entrance 2 and Waiting Area B", stepNumber: 4, distance: 15),
-                    NavigationStep(instruction: "Pharmacy will be on your left", stepNumber: 5, distance: 5)
-                ],
-                pathLocations: ["Reception", "Waiting Area", "Emergency Dept", "Waiting Area\nB", "Pharmacy"]
-            ),
-            
-            NavigationRoute(
-                start: "Room 201",
-                end: "Elevator",
-                floor: "Floor 2",
-                distance: 40,
-                estimatedTime: 2,
-                steps: [
-                    NavigationStep(instruction: "Exit Room 201 and turn right", stepNumber: 1, distance: 5),
-                    NavigationStep(instruction: "Walk straight down the corridor", stepNumber: 2, distance: 15),
-                    NavigationStep(instruction: "Pass the Cardiology department", stepNumber: 3, distance: 10),
-                    NavigationStep(instruction: "Elevator is ahead on your right", stepNumber: 4, distance: 10)
-                ],
-                pathLocations: ["Room 201", "Cardiology", "Pediatrics", "Elevator"]
-            ),
-            
-            NavigationRoute(
-                start: "Cardiology",
-                end: "Orthopedics",
-                floor: "Floor 2",
-                distance: 55,
-                estimatedTime: 2,
-                steps: [
-                    NavigationStep(instruction: "Exit Cardiology department", stepNumber: 1, distance: 0),
-                    NavigationStep(instruction: "Turn left and walk to Pediatrics", stepNumber: 2, distance: 20),
-                    NavigationStep(instruction: "Continue past Neurology department", stepNumber: 3, distance: 20),
-                    NavigationStep(instruction: "Orthopedics is at the end of corridor", stepNumber: 4, distance: 15)
-                ],
-                pathLocations: ["Cardiology", "Pediatrics", "Neurology", "Orthopedics"]
-            ),
-            
-            NavigationRoute(
-                start: "Main Lab",
-                end: "Cafeteria",
-                floor: "Floor 3",
-                distance: 70,
-                estimatedTime: 3,
-                steps: [
-                    NavigationStep(instruction: "Leave Main Lab and turn left", stepNumber: 1, distance: 5),
-                    NavigationStep(instruction: "Walk past X-Ray and MRI rooms", stepNumber: 2, distance: 20),
-                    NavigationStep(instruction: "Continue past Blood Bank", stepNumber: 3, distance: 15),
-                    NavigationStep(instruction: "Pass CT Scan and Pathology", stepNumber: 4, distance: 20),
-                    NavigationStep(instruction: "Cafeteria entrance on your left", stepNumber: 5, distance: 10)
-                ],
-                pathLocations: ["Main Lab", "Blood Bank", "CT Scan", "Pathology", "Cafeteria"]
-            ),
-            
-            NavigationRoute(
-                start: "X-Ray",
-                end: "Elevator",
-                floor: "Floor 3",
-                distance: 45,
-                estimatedTime: 2,
-                steps: [
-                    NavigationStep(instruction: "Exit X-Ray room", stepNumber: 1, distance: 0),
-                    NavigationStep(instruction: "Walk down the main corridor", stepNumber: 2, distance: 15),
-                    NavigationStep(instruction: "Pass CT Scan on your right", stepNumber: 3, distance: 15),
-                    NavigationStep(instruction: "Elevator is at the end", stepNumber: 4, distance: 15)
-                ],
-                pathLocations: ["X-Ray", "CT Scan", "Ultrasound", "Elevator"]
-            )
-        ]
-    }
-}
-
-struct NavigationStep: Identifiable {
-    let id = UUID()
-    let instruction: String
-    let stepNumber: Int
-    let distance: Int
 }
 
 #Preview {

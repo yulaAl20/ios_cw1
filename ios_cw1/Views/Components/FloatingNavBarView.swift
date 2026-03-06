@@ -77,7 +77,7 @@ struct FloatingNavBarView: View {
         }
         .frame(height: 70)
         .padding(.horizontal, 16)
-        .padding(.bottom, 20)
+        .padding(.bottom, 50)
     }
 
 
