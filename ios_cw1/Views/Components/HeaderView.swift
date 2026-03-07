@@ -8,17 +8,18 @@
 import SwiftUI
 
 struct HeaderView: View {
-    
     var body: some View {
         HStack(spacing: 12) {
             
-            ZStack {
-                Circle()
-                    .fill(Color.white.opacity(0.25))
-                    .frame(width: 44, height: 44)
-                Image(systemName: "person.circle")
-                    .font(.system(size: 24))
-                    .foregroundColor(.black.opacity(0.6))
+            NavigationLink(destination: ProfileView()) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.25))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "person.circle")
+                        .font(.system(size: 24))
+                        .foregroundColor(.black.opacity(0.6))
+                }
             }
             
             HStack {
@@ -48,6 +49,8 @@ struct HeaderView: View {
 }
 
 #Preview {
-    HeaderView()
-        .padding()
+    NavigationStack {
+        HeaderView()
+            .padding()
+    }
 }

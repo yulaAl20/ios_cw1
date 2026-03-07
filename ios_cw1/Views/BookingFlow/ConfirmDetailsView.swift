@@ -20,6 +20,10 @@ struct ConfirmDetailsView: View {
     @State private var originalPhone = ""
     @State private var isEditing = false
 
+    // Profile data from AppStorage
+    @AppStorage("userName") private var storedName = ""
+    @AppStorage("userPhoneNumber") private var storedPhone = "+94 77 123 4567"
+
     private let location = "Room 12, 1st Floor, Main Wing"
 
     private var formattedDateTime: String {
@@ -127,7 +131,8 @@ struct ConfirmDetailsView: View {
                                         .foregroundColor(.gray)
                                     TextField("", text: $name)
                                         .placeholder(when: name.isEmpty) {
-                                            Text("Peter John").foregroundColor(.gray.opacity(0.6))
+                                            Text(storedName.isEmpty ? "Add your name" : storedName)
+                                                .foregroundColor(.gray.opacity(0.6))
                                         }
                                         .padding(.horizontal, 12)
                                         .padding(.vertical, 10)
@@ -143,7 +148,8 @@ struct ConfirmDetailsView: View {
                                         .foregroundColor(.gray)
                                     TextField("", text: $phone)
                                         .placeholder(when: phone.isEmpty) {
-                                            Text("+94 77 123 4567").foregroundColor(.gray.opacity(0.6))
+                                            Text(storedPhone)
+                                                .foregroundColor(.gray.opacity(0.6))
                                         }
                                         .padding(.horizontal, 12)
                                         .padding(.vertical, 10)
@@ -189,7 +195,7 @@ struct ConfirmDetailsView: View {
                                         .font(.subheadline)
                                         .foregroundColor(.gray)
                                     Spacer()
-                                    Text(name.isEmpty ? "Peter John" : name)
+                                    Text(name.isEmpty ? (storedName.isEmpty ? "Add your name" : storedName) : name)
                                         .font(.body)
                                         .fontWeight(.medium)
                                 }
@@ -198,7 +204,7 @@ struct ConfirmDetailsView: View {
                                         .font(.subheadline)
                                         .foregroundColor(.gray)
                                     Spacer()
-                                    Text(phone.isEmpty ? "+94 77 123 4567" : phone)
+                                    Text(phone.isEmpty ? storedPhone : phone)
                                         .font(.body)
                                         .fontWeight(.medium)
                                 }
@@ -236,9 +242,9 @@ struct ConfirmDetailsView: View {
                             doctor: doctor,
                             selectedDate: selectedDate,
                             selectedTimeSlot: selectedTimeSlot,
-                            patientName: name.isEmpty ? "Peter John" : name,
-                            patientPhone: phone.isEmpty ? "+94 77 123 4567" : phone,
-                            onFlowComplete: onFlowComplete   
+                            patientName: name.isEmpty ? (storedName.isEmpty ? "Peter John" : storedName) : name,
+                            patientPhone: phone.isEmpty ? storedPhone : phone,
+                            onFlowComplete: onFlowComplete
                         )
                     ) {
                         Text("Proceed")
@@ -259,6 +265,14 @@ struct ConfirmDetailsView: View {
         }
         .navigationBarHidden(true)
         .animation(.easeInOut(duration: 0.2), value: isEditing)
+        .onAppear {
+            // Initialize with stored profile data if not already set
+            if name.isEmpty { name = storedName }
+            if phone.isEmpty { phone = storedPhone }
+            // Also set originals for edit mode
+            originalName = name
+            originalPhone = phone
+        }
     }
 }
 
