@@ -11,9 +11,19 @@ struct PaymentConfirmationSheet: View {
     @Binding var isPresented: Bool
     @StateObject private var viewModel: PaymentViewModel
     
+    @State private var showDiscountCodeSheet = false
+    @State private var discountCode = ""
+    @State private var appliedDiscount: Double = 0.0
+    @State private var appliedDiscountCode = ""
+    @State private var discountError = ""
+    
     init(totalPrice: Double, isPresented: Binding<Bool>) {
-        _viewModel = StateObject(wrappedValue: PaymentViewModel(totalPrice: totalPrice))
-        _isPresented = isPresented
+        self._isPresented = isPresented
+        self._viewModel = StateObject(wrappedValue: PaymentViewModel(totalPrice: totalPrice))
+    }
+    
+    var totalWithDiscount: Double {
+        max(0, viewModel.totalPrice - appliedDiscount)
     }
     
     var body: some View {
@@ -60,6 +70,17 @@ struct PaymentConfirmationSheet: View {
                 )
                 .presentationDetents([.large])
             }
+            .sheet(isPresented: $showDiscountCodeSheet) {
+                DiscountCodeSheet(
+                    isPresented: $showDiscountCodeSheet,
+                    discountCode: $discountCode,
+                    appliedDiscount: $appliedDiscount,
+                    appliedDiscountCode: $appliedDiscountCode,
+                    discountError: $discountError,
+                    totalPrice: viewModel.totalPrice
+                )
+                .presentationDetents([.height(320)])
+            }
             .alert("Apple Pay", isPresented: $viewModel.showApplePayPrompt) {
                 Button("Cancel", role: .cancel) { }
                 Button("Simulate Payment") {
@@ -100,6 +121,7 @@ struct PaymentConfirmationSheet: View {
             Divider()
                 .padding(.leading, 16)
             
+            // Test Charge
             HStack {
                 Text("Test Charge")
                     .font(.system(size: 15))
@@ -111,38 +133,80 @@ struct PaymentConfirmationSheet: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
             
-            HStack {
-                Text("Lab Visit Fee")
-                    .font(.system(size: 15))
-                    .foregroundColor(.gray)
-                Spacer()
-                Text("LKR \(String(format: "%.2f", viewModel.labVisitFee))")
-                    .font(.system(size: 15))
+            // Discount Code Section
+            if appliedDiscount > 0 {
+                // Show applied discount
+                HStack {
+                    HStack(spacing: 6) {
+                        Image(systemName: "tag.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(.green)
+                        Text(appliedDiscountCode)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.green)
+                    }
+                    
+                    Spacer()
+                    
+                    Text("-LKR \(String(format: "%.2f", appliedDiscount))")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.green)
+                    
+                    Button(action: {
+                        // Remove discount
+                        appliedDiscount = 0
+                        appliedDiscountCode = ""
+                        discountCode = ""
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.gray)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            } else {
+                // Show add discount button
+                Button(action: { showDiscountCodeSheet = true }) {
+                    HStack {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.blue)
+                        
+                        Text("Add Discount Code")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.blue)
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.gray)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            
-            HStack {
-                Text("Discount")
-                    .font(.system(size: 15))
-                    .foregroundColor(.gray)
-                Spacer()
-                Text("-LKR \(String(format: "%.2f", viewModel.discount))")
-                    .font(.system(size: 15))
-                    .foregroundColor(.green)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
             
             Divider()
                 .padding(.leading, 16)
             
+            // Total Amount
             HStack {
                 Text("Total Amount")
                     .font(.system(size: 16, weight: .semibold))
                 Spacer()
-                Text("LKR \(String(format: "%.2f", viewModel.totalAmount))")
-                    .font(.system(size: 16, weight: .bold))
+                VStack(alignment: .trailing, spacing: 2) {
+                    if appliedDiscount > 0 {
+                        Text("LKR \(String(format: "%.2f", viewModel.totalPrice))")
+                            .font(.system(size: 13))
+                            .foregroundColor(.gray)
+                            .strikethrough()
+                    }
+                    Text("LKR \(String(format: "%.2f", totalWithDiscount))")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(appliedDiscount > 0 ? .green : .primary)
+                }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
@@ -359,6 +423,23 @@ struct PayAtCounterSuccessView: View {
     @ObservedObject var viewModel: PaymentViewModel
     @Binding var isPresented: Bool
     
+    @State private var showShareSheet = false
+    @State private var showDownloadAlert = false
+    
+    var appointmentDetails: String {
+        """
+        🏥 Lab Appointment Confirmation
+        
+        📋 Status: Pay at Counter
+        💰 Amount to Pay: LKR \(String(format: "%.2f", viewModel.totalAmount))
+        🎫 Receipt Number: \(viewModel.receiptNumber)
+        
+        ⏰ Please arrive 30 minutes early to complete payment at the counter.
+        
+        Show this confirmation or scan the QR code at the payment counter for faster processing.
+        """
+    }
+    
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
@@ -455,36 +536,81 @@ struct PayAtCounterSuccessView: View {
                 .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
                 .padding(.horizontal, 20)
                 
+                // Download & Share Buttons
+                HStack(spacing: 12) {
+                    // Download Button
+                    Button(action: { showDownloadAlert = true }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "arrow.down.circle.fill")
+                                .font(.system(size: 18))
+                            Text("Download")
+                                .font(.system(size: 15, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.15, green: 0.35, blue: 0.75),
+                                    Color(red: 0.25, green: 0.50, blue: 0.88)
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(12)
+                    }
+                    
+                    // Share Button
+                    Button(action: { showShareSheet = true }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 18))
+                            Text("Share")
+                                .font(.system(size: 15, weight: .semibold))
+                        }
+                        .foregroundColor(Color(red: 0.15, green: 0.35, blue: 0.75))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color.white)
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color(red: 0.15, green: 0.35, blue: 0.75), lineWidth: 2)
+                        )
+                    }
+                }
+                .padding(.horizontal, 20)
+                
                 Text("A confirmation has been sent to your registered email and phone number.")
                     .font(.system(size: 13))
                     .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
                 
-                Spacer().frame(height: 100)
+                // Done Button (inside scroll view, not fixed)
+                Button("Done") {
+                    isPresented = false
+                }
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(Color.blue)
+                .cornerRadius(30)
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 30)
             }
         }
-        .overlay(alignment: .bottom) {
-            Button("Done") {
-                isPresented = false
-            }
-            .font(.system(size: 17, weight: .semibold))
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(Color.blue)
-            .cornerRadius(30)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
-            .background(
-                LinearGradient(
-                    colors: [Color(.systemBackground).opacity(0), Color(.systemBackground)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 100)
-                .allowsHitTesting(false)
-            )
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet(activityItems: [appointmentDetails])
+        }
+        .alert("Download Confirmation", isPresented: $showDownloadAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Your appointment confirmation has been saved to your device.")
         }
     }
 }
@@ -679,30 +805,20 @@ struct RegularPaymentSuccessView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
                 
-                Spacer().frame(height: 100)
+                // Done Button (inside scroll view, not fixed)
+                Button("Done") {
+                    isPresented = false
+                }
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(Color.blue)
+                .cornerRadius(30)
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 30)
             }
-        }
-        .overlay(alignment: .bottom) {
-            Button("Done") {
-                isPresented = false
-            }
-            .font(.system(size: 17, weight: .semibold))
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(Color.blue)
-            .cornerRadius(30)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
-            .background(
-                LinearGradient(
-                    colors: [Color(.systemBackground).opacity(0), Color(.systemBackground)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 100)
-                .allowsHitTesting(false)
-            )
         }
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(activityItems: [appointmentDetails])
@@ -725,4 +841,150 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
     
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+
+// MARK: - Discount Code Sheet
+
+struct DiscountCodeSheet: View {
+    @Binding var isPresented: Bool
+    @Binding var discountCode: String
+    @Binding var appliedDiscount: Double
+    @Binding var appliedDiscountCode: String
+    @Binding var discountError: String
+    let totalPrice: Double
+    
+    @State private var isValidating = false
+    
+    // Sample valid discount codes
+    private let validCodes: [String: Double] = [
+        "SAVE10": 0.10,      // 10% off
+        "SAVE20": 0.20,      // 20% off
+        "FIRST50": 0.50,     // 50% off for first-time users
+        "HEALTH100": 100.0,  // Flat 100 LKR off
+        "WELLNESS200": 200.0 // Flat 200 LKR off
+    ]
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                // Icon
+                ZStack {
+                    Circle()
+                        .fill(Color.blue.opacity(0.1))
+                        .frame(width: 70, height: 70)
+                    
+                    Image(systemName: "tag.fill")
+                        .font(.system(size: 30))
+                        .foregroundColor(.blue)
+                }
+                .padding(.top, 20)
+                
+                Text("Enter Discount Code")
+                    .font(.system(size: 20, weight: .bold))
+                
+                // Code Input Field
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        TextField("e.g. SAVE10", text: $discountCode)
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                            .font(.system(size: 16))
+                        
+                        if !discountCode.isEmpty {
+                            Button(action: { discountCode = "" }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(Color.white)
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(!discountError.isEmpty ? Color.red : Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+                    
+                    if !discountError.isEmpty {
+                        HStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .font(.system(size: 12))
+                            Text(discountError)
+                                .font(.system(size: 12))
+                        }
+                        .foregroundColor(.red)
+                    }
+                }
+                .padding(.horizontal, 20)
+                
+                // Apply Button
+                Button(action: applyDiscount) {
+                    HStack {
+                        if isValidating {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .padding(.trailing, 8)
+                        }
+                        Text(isValidating ? "Validating..." : "Apply Code")
+                            .font(.system(size: 17, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(discountCode.isEmpty ? Color.gray : Color.blue)
+                    .cornerRadius(30)
+                }
+                .disabled(discountCode.isEmpty || isValidating)
+                .padding(.horizontal, 20)
+                
+                Spacer()
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Cancel") {
+                        isPresented = false
+                    }
+                    .foregroundColor(.blue)
+                }
+            }
+        }
+    }
+    
+    func applyDiscount() {
+        discountError = ""
+        isValidating = true
+        
+        // Simulate network delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            isValidating = false
+            
+            let upperCode = discountCode.uppercased().trimmingCharacters(in: .whitespaces)
+            
+            if let discountValue = validCodes[upperCode] {
+                // Check if it's a percentage or flat amount
+                if discountValue < 1 {
+                    // Percentage discount
+                    appliedDiscount = totalPrice * discountValue
+                } else {
+                    // Flat amount discount
+                    appliedDiscount = min(discountValue, totalPrice) // Don't exceed total
+                }
+                appliedDiscountCode = upperCode
+                isPresented = false
+            } else {
+                discountError = "Invalid discount code. Please try again."
+            }
+        }
+    }
+}
+
+
+#Preview {
+    PaymentConfirmationSheet(
+        totalPrice: 1500.00,
+        isPresented: .constant(true)
+    )
 }

@@ -7,12 +7,17 @@
 
 
 import SwiftUI
+import Combine
 
 struct ServicesView: View {
     
     @State private var selectedTab: Int = 1
+    @State private var currentCardIndex: Int = 0
     
-    // Sample test results for recent history
+    // Timer for auto-scroll
+    let carouselTimer = Timer.publish(every: 4, on: .main, in: .common).autoconnect()
+    
+    // recent history data
     private let recentTests: [TestResult] = [
         TestResult(
             testName: "Blood Test",
@@ -35,16 +40,6 @@ struct ServicesView: View {
             reportAvailable: true,
             reportURL: "sample-report-url",
             icon: "viewfinder"
-        ),
-        TestResult(
-            testName: "Pharmacy Order",
-            category: .pharmacy,
-            place: "ClinicFlow Pharmacy",
-            date: Calendar.current.date(byAdding: .day, value: -11, to: Date())!,
-            doctorName: "Pharmacist Jane Smith",
-            status: "Delivered",
-            reportAvailable: false,
-            icon: "pills.fill"
         )
     ]
     
@@ -95,7 +90,8 @@ struct ServicesView: View {
                         
                         Spacer().frame(height: 110)
                         
-                        quickActionCard
+                        // Carousel Cards
+                        quickActionCarousel
                         
                         clinicServicesSection
                         
@@ -127,13 +123,42 @@ struct ServicesView: View {
 }
 
 
-// QUICK ACTION CARD
-
+// CAROUSEL CARDS
 
 extension ServicesView {
     
-    var quickActionCard: some View {
-        
+    var quickActionCarousel: some View {
+        VStack(spacing: 12) {
+            TabView(selection: $currentCardIndex) {
+                // Card 1: Book a Test
+                bookTestCard
+                    .tag(0)
+                
+                // Card 2: Doctor Consultation
+                consultationCard
+                    .tag(1)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .frame(height: 170)
+            .onReceive(carouselTimer) { _ in
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    currentCardIndex = (currentCardIndex + 1) % 2
+                }
+            }
+            
+            // Page Indicators
+            HStack(spacing: 8) {
+                ForEach(0..<2, id: \.self) { index in
+                    Circle()
+                        .fill(currentCardIndex == index ? Color(red: 0.15, green: 0.35, blue: 0.75) : Color.gray.opacity(0.3))
+                        .frame(width: 8, height: 8)
+                        .animation(.easeInOut(duration: 0.17), value: currentCardIndex)
+                }
+            }
+        }
+    }
+    
+    var bookTestCard: some View {
         ZStack(alignment: .bottomTrailing) {
             
             RoundedRectangle(cornerRadius: 20)
@@ -160,7 +185,7 @@ extension ServicesView {
             
             VStack(alignment: .leading, spacing: 12) {
                 
-                Text("QUICK ACTION")
+                Text("MAKING HEALTHCARE EASIER")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(.white.opacity(0.8))
                     .tracking(1.5)
@@ -178,6 +203,67 @@ extension ServicesView {
                             .font(.system(size: 14, weight: .semibold))
                     }
                     .foregroundColor(Color(red: 0.15, green: 0.35, blue: 0.75))
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 10)
+                    .background(Color.white)
+                    .cornerRadius(14)
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(height: 170)
+    }
+    
+    var consultationCard: some View {
+        ZStack(alignment: .bottomTrailing) {
+            
+            RoundedRectangle(cornerRadius: 20)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.25, green: 0.45, blue: 0.90),
+                            Color(red: 0.55, green: 0.35, blue: 0.95)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            
+            Image(systemName: "stethoscope")
+                .font(.system(size: 80))
+                .foregroundColor(.white.opacity(0.15))
+                .padding(.trailing, 20)
+                .padding(.bottom, 10)
+            
+            RoundedRectangle(cornerRadius: 20)
+                .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [6,4]))
+                .foregroundColor(.white.opacity(0.3))
+            
+            VStack(alignment: .leading, spacing: 10) {
+                
+                Text("NO CHANNELLING FEE")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
+                    .tracking(1.5)
+                
+                Text("Doctor Consultation")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(.white)
+                
+                Text("Review your lab/scan reports with a doctor")
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.85))
+                
+                NavigationLink(destination: PastTestsAndOrdersView()) {
+                    
+                    HStack(spacing: 6) {
+                        Image(systemName: "doc.text.magnifyingglass")
+                        
+                        Text("View Past Reports")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundColor(Color(red: 0.55, green: 0.35, blue: 0.95))
                     .padding(.horizontal, 18)
                     .padding(.vertical, 10)
                     .background(Color.white)

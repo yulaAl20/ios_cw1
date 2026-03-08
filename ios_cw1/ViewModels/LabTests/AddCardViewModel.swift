@@ -45,10 +45,34 @@ class AddCardViewModel: ObservableObject {
     
     var isFormValid: Bool {
         let cardClean = cardNumber.replacingOccurrences(of: " ", with: "")
-        return cardClean.count >= 15 &&
-               !cardholderName.isEmpty &&
-               expiryDate.count == 5 &&
-               cvv.count >= 3
+        
+        // Check basic requirements
+        guard cardClean.count >= 15,
+              !cardholderName.isEmpty,
+              cardholderName.count >= 3,
+              expiryDate.count == 5,
+              cvv.count >= 3 else {
+            return false
+        }
+        
+        // Check if card is not expired
+        let components = expiryDate.split(separator: "/")
+        guard components.count == 2,
+              let month = Int(components[0]),
+              let year = Int(components[1]),
+              month >= 1, month <= 12 else {
+            return false
+        }
+        
+        // Current date is March 2026, so card must be valid (03/26 or later)
+        let currentYear = 26
+        let currentMonth = 3
+        
+        if year < currentYear || (year == currentYear && month < currentMonth) {
+            return false // Card is expired
+        }
+        
+        return true
     }
     
     var lastFourDigits: String {

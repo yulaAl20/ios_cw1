@@ -150,7 +150,7 @@ extension PastTestsAndOrdersView {
             Spacer()
         }
         .padding(.horizontal, 20)
-        .padding(.top, 60)
+        .padding(.top,10)
         .padding(.bottom, 16)
         .background(Color(red: 0.82, green: 0.88, blue: 0.96))
     }

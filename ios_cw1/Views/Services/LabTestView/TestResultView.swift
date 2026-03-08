@@ -26,7 +26,7 @@ struct TestResultView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     
-                    Spacer().frame(height: 120)
+                    Spacer().frame(height: 80)
                     
                     // Test Overview Card
                     testOverviewCard
@@ -36,7 +36,7 @@ struct TestResultView: View {
                     if testResult.reportAvailable {
                         reportActionsSection
                             .padding(.horizontal, 20)
-                            .padding(.top, 20)
+                            .padding(.top,20)
                     }
                     
                     // QR Code Section
@@ -44,7 +44,7 @@ struct TestResultView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
                     
-                    Spacer().frame(height: 40)
+                    Spacer().frame(height: 20)
                 }
             }
             
@@ -93,8 +93,8 @@ extension TestResultView {
             
             Spacer()
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 60)
+        .padding(.horizontal, 30)
+        .padding(.top, 10)
         .padding(.bottom, 16)
         .background(Color(red: 0.82, green: 0.88, blue: 0.96))
     }

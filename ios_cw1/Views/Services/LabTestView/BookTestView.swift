@@ -17,7 +17,7 @@ struct BookTestView: View {
     init(initialCategory: TestCategory = .all) {
         let vm = LabTestViewModel()
         vm.selectedCategory = initialCategory
-        _viewModel = StateObject(wrappedValue: vm)
+        self._viewModel = StateObject(wrappedValue: vm)
     }
     
     var body: some View {
@@ -109,7 +109,7 @@ struct BookTestView: View {
                                 .foregroundColor(.gray)
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.top, 60)
+                        .padding(.top, 10)
                     }
                     
                     

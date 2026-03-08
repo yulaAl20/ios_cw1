@@ -13,9 +13,73 @@ struct AddCardSheet: View {
     
     @StateObject private var viewModel = AddCardViewModel()
     @FocusState private var focusedField: CardField?
-    
+    @State private var hasAttemptedSubmit = false
+      
     enum CardField {
         case number, name, expiry, cvv
+    }
+    
+    // Validation error messages
+    var cardNumberError: String? {
+        guard hasAttemptedSubmit || (!viewModel.cardNumber.isEmpty && focusedField != .number) else { return nil }
+        let cleaned = viewModel.cardNumber.replacingOccurrences(of: " ", with: "")
+        if cleaned.isEmpty {
+            return "Card number is required"
+        } else if cleaned.count < 15 {
+            return "Enter a valid card number"
+        }
+        return nil
+    }
+    
+    var cardholderNameError: String? {
+        guard hasAttemptedSubmit || (!viewModel.cardholderName.isEmpty && focusedField != .name) else { return nil }
+        if viewModel.cardholderName.isEmpty && hasAttemptedSubmit {
+            return "Cardholder name is required"
+        } else if viewModel.cardholderName.count > 0 && viewModel.cardholderName.count < 3 {
+            return "Enter a valid name"
+        }
+        return nil
+    }
+    
+    var expiryDateError: String? {
+        guard hasAttemptedSubmit || (!viewModel.expiryDate.isEmpty && focusedField != .expiry) else { return nil }
+        if viewModel.expiryDate.isEmpty && hasAttemptedSubmit {
+            return "Expiry date is required"
+        } else if viewModel.expiryDate.count > 0 && viewModel.expiryDate.count < 5 {
+            return "Enter valid expiry (MM/YY)"
+        } else if viewModel.expiryDate.count == 5 {
+            let components = viewModel.expiryDate.split(separator: "/")
+            guard components.count == 2,
+                  let month = Int(components[0]),
+                  let year = Int(components[1]) else {
+                return "Enter valid expiry (MM/YY)"
+            }
+            
+            // Validate month range
+            if month < 1 || month > 12 {
+                return "Invalid month"
+            }
+            
+            // Check if card is expired (current date is March 2026)
+            // Card is expired if year < 26, or if year == 26 and month < 3
+            let currentYear = 26  // March 2026
+            let currentMonth = 3
+            
+            if year < currentYear || (year == currentYear && month < currentMonth) {
+                return "Card has expired"
+            }
+        }
+        return nil
+    }
+    
+    var cvvError: String? {
+        guard hasAttemptedSubmit || (!viewModel.cvv.isEmpty && focusedField != .cvv) else { return nil }
+        if viewModel.cvv.isEmpty && hasAttemptedSubmit {
+            return "CVV is required"
+        } else if viewModel.cvv.count > 0 && viewModel.cvv.count < 3 {
+            return "Enter valid CVV"
+        }
+        return nil
     }
     
     var body: some View {
@@ -116,6 +180,7 @@ struct AddCardSheet: View {
     
     var cardDetailsForm: some View {
         VStack(spacing: 0) {
+            // Card Number Field
             VStack(alignment: .leading, spacing: 8) {
                 Text("Card Number")
                     .font(.system(size: 14, weight: .medium))
@@ -137,10 +202,28 @@ struct AddCardSheet: View {
                 .padding()
                 .background(Color.white)
                 .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(cardNumberError != nil ? Color.red : Color.clear, lineWidth: 1)
+                )
+                
+                // Error message
+                if let error = cardNumberError {
+                    HStack(spacing: 4) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .font(.system(size: 12))
+                        Text(error)
+                            .font(.system(size: 12))
+                    }
+                    .foregroundColor(.red)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 16)
+            .animation(.easeInOut(duration: 0.2), value: cardNumberError)
             
+            // Cardholder Name Field
             VStack(alignment: .leading, spacing: 8) {
                 Text("Cardholder Name")
                     .font(.system(size: 14, weight: .medium))
@@ -152,11 +235,30 @@ struct AddCardSheet: View {
                     .padding()
                     .background(Color.white)
                     .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(cardholderNameError != nil ? Color.red : Color.clear, lineWidth: 1)
+                    )
+                
+                // Error message
+                if let error = cardholderNameError {
+                    HStack(spacing: 4) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .font(.system(size: 12))
+                        Text(error)
+                            .font(.system(size: 12))
+                    }
+                    .foregroundColor(.red)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal,20)
             .padding(.bottom, 16)
+            .animation(.easeInOut(duration: 0.2), value: cardholderNameError)
             
-            HStack(spacing: 16) {
+            // Expiry Date and CVV Fields
+            HStack(alignment: .top, spacing: 16) {
+                // Expiry Date
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Expiry Date")
                         .font(.system(size: 14, weight: .medium))
@@ -171,8 +273,26 @@ struct AddCardSheet: View {
                         .padding()
                         .background(Color.white)
                         .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(expiryDateError != nil ? Color.red : Color.clear, lineWidth: 1)
+                        )
+                    
+                    // Error message
+                    if let error = expiryDateError {
+                        HStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .font(.system(size: 12))
+                            Text(error)
+                                .font(.system(size: 12))
+                        }
+                        .foregroundColor(.red)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
+                .animation(.easeInOut(duration: 0.2), value: expiryDateError)
                 
+                // CVV
                 VStack(alignment: .leading, spacing: 8) {
                     Text("CVV")
                         .font(.system(size: 14, weight: .medium))
@@ -192,7 +312,24 @@ struct AddCardSheet: View {
                     .padding()
                     .background(Color.white)
                     .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(cvvError != nil ? Color.red : Color.clear, lineWidth: 1)
+                    )
+                    
+                    // Error message
+                    if let error = cvvError {
+                        HStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .font(.system(size: 12))
+                            Text(error)
+                                .font(.system(size: 12))
+                        }
+                        .foregroundColor(.red)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
+                .animation(.easeInOut(duration: 0.2), value: cvvError)
             }
             .padding(.horizontal, 20)
         }
@@ -223,9 +360,14 @@ struct AddCardSheet: View {
     
     var addCardButton: some View {
         Button(action: {
-            viewModel.addCard { card, save in
-                onCardAdded(card, save)
-                isPresented = false
+            hasAttemptedSubmit = true
+            
+            // Only proceed if form is valid
+            if viewModel.isFormValid {
+                viewModel.addCard { card, save in
+                    onCardAdded(card, save)
+                    isPresented = false
+                }
             }
         }) {
             HStack {
@@ -243,7 +385,7 @@ struct AddCardSheet: View {
             .background(viewModel.isFormValid ? Color.blue : Color.gray)
             .cornerRadius(30)
         }
-        .disabled(!viewModel.isFormValid || viewModel.isProcessing)
+        .disabled(viewModel.isProcessing)
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
         .background(Color(.systemBackground))

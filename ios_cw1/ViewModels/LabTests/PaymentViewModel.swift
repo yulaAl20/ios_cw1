@@ -33,17 +33,13 @@ class PaymentViewModel: ObservableObject {
     var discount: Double { 0.0 }
     var totalAmount: Double { totalPrice + labVisitFee - discount }
     
-    // Generate unique receipt number
-    private var _receiptNumber: String?
-    var receiptNumber: String {
-        if _receiptNumber == nil {
-            let prefix = "RCP"
-            let timestamp = Int(Date().timeIntervalSince1970) % 1000000
-            let random = Int.random(in: 100...999)
-            _receiptNumber = "\(prefix)-\(timestamp)-\(random)"
-        }
-        return _receiptNumber!
-    }
+    // Generate unique receipt number - lazy initialization
+    lazy var receiptNumber: String = {
+        let prefix = "RCP"
+        let timestamp = Int(Date().timeIntervalSince1970) % 1000000
+        let random = Int.random(in: 100...999)
+        return "\(prefix)-\(timestamp)-\(random)"
+    }()
     
     var canProceed: Bool {
         switch selectedPaymentMethod {
