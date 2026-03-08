@@ -6,11 +6,12 @@
 //
 import Foundation
 
-enum TestCategory: String, CaseIterable, Identifiable {
+enum TestCategory: String, CaseIterable, Identifiable, Codable {
     case all = "All"
     case blood = "Blood Tests"
     case urine = "Urine"
     case radiology = "Radiology"
+    case pharmacy = "Pharmacy"
     
     var id: String { rawValue }
 }

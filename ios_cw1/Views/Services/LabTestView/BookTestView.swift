@@ -12,6 +12,7 @@ struct BookTestView: View {
     
     @StateObject private var viewModel: LabTestViewModel
     @Environment(\.dismiss) var dismiss
+    @State private var showLabVisitDetails = false
     
     init(initialCategory: TestCategory = .all) {
         let vm = LabTestViewModel()
@@ -182,10 +183,10 @@ struct BookTestView: View {
                     
                     Spacer()
                     
-                    Button {
-                        
-                    } label: {
-                        
+                    NavigationLink(destination: LabVisitDetailsView(
+                        selectedTests: viewModel.selectedTests,
+                        totalPrice: viewModel.totalPrice
+                    )) {
                         Text("Continue")
                             .font(.system(size: 16, weight: .semibold))
                             .padding(.horizontal, 40)

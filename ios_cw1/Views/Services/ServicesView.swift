@@ -12,6 +12,42 @@ struct ServicesView: View {
     
     @State private var selectedTab: Int = 1
     
+    // Sample test results for recent history
+    private let recentTests: [TestResult] = [
+        TestResult(
+            testName: "Blood Test",
+            category: .blood,
+            place: "ClinicFlow Central Lab",
+            date: Calendar.current.date(byAdding: .day, value: -2, to: Date())!,
+            doctorName: "Dr. Sarah Johnson",
+            status: "Completed",
+            reportAvailable: true,
+            reportURL: "sample-report-url",
+            icon: "drop.fill"
+        ),
+        TestResult(
+            testName: "MRI Scan",
+            category: .radiology,
+            place: "ClinicFlow Imaging Center",
+            date: Calendar.current.date(byAdding: .day, value: -7, to: Date())!,
+            doctorName: "Dr. Michael Chen",
+            status: "Report Ready",
+            reportAvailable: true,
+            reportURL: "sample-report-url",
+            icon: "viewfinder"
+        ),
+        TestResult(
+            testName: "Pharmacy Order",
+            category: .pharmacy,
+            place: "ClinicFlow Pharmacy",
+            date: Calendar.current.date(byAdding: .day, value: -11, to: Date())!,
+            doctorName: "Pharmacist Jane Smith",
+            status: "Delivered",
+            reportAvailable: false,
+            icon: "pills.fill"
+        )
+    ]
+    
     private let clinicServices: [ClinicService] = [
         ClinicService(
             icon: "link",
@@ -251,72 +287,59 @@ extension ServicesView {
                 
                 Spacer()
                 
-                Button("View All") { }
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color(red: 0.15, green: 0.35, blue: 0.75))
+                NavigationLink(destination: PastTestsAndOrdersView()) {
+                    Text("View All")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color(red: 0.15, green: 0.35, blue: 0.75))
+                }
             }
             
             VStack(spacing: 12) {
-                
-                historyCard(
-                    icon: "drop.fill",
-                    title: "Blood Test",
-                    date: "10 Mar 2026",
-                    status: "Completed"
-                )
-                
-                historyCard(
-                    icon: "viewfinder",
-                    title: "MRI Scan",
-                    date: "05 Mar 2026",
-                    status: "Report Ready"
-                )
-                
-                historyCard(
-                    icon: "pills.fill",
-                    title: "Pharmacy Order",
-                    date: "01 Mar 2026",
-                    status: "Delivered"
-                )
+                ForEach(recentTests) { test in
+                    historyCard(test)
+                }
             }
         }
     }
     
     
-    func historyCard(icon: String, title: String, date: String, status: String) -> some View {
-        
-        HStack(spacing: 14) {
-            
-            ZStack {
-                Circle()
-                    .fill(Color.blue.opacity(0.12))
-                    .frame(width: 42, height: 42)
+    func historyCard(_ test: TestResult) -> some View {
+        NavigationLink(destination: TestResultView(testResult: test)) {
+            HStack(spacing: 14) {
                 
-                Image(systemName: icon)
-                    .font(.system(size: 18))
-                    .foregroundColor(.blue)
+                ZStack {
+                    Circle()
+                        .fill(Color.blue.opacity(0.12))
+                        .frame(width: 42, height: 42)
+                    
+                    Image(systemName: test.icon)
+                        .font(.system(size: 18))
+                        .foregroundColor(.blue)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    
+                    Text(test.testName)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.black)
+                    
+                    Text("\(test.status) • \(test.formattedDate)")
+                        .font(.system(size: 12))
+                        .foregroundColor(.gray)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(Color(red: 0.15, green: 0.35, blue: 0.75))
             }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                
-                Text(title)
-                    .font(.system(size: 15, weight: .semibold))
-                
-                Text("\(status) • \(date)")
-                    .font(.system(size: 12))
-                    .foregroundColor(.gray)
-            }
-            
-            Spacer()
-            
-            Button("View") { }
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(Color(red: 0.15, green: 0.35, blue: 0.75))
+            .padding(14)
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 3)
         }
-        .padding(14)
-        .background(Color.white)
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 3)
+        .buttonStyle(.plain)
     }
 }
 
