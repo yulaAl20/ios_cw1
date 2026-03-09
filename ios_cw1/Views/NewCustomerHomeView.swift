@@ -115,8 +115,10 @@ extension NewCustomerHomeView {
     
     var bookAppointmentCard: some View {
         VStack(spacing: 12) {
-            
-            Button(action: {}) {
+
+            Button(action: {
+                showBookingFlow = true
+            }) {
                 Text("Book Appointment")
                     .font(.headline)
                     .foregroundColor(.white)
@@ -180,3 +182,6 @@ extension NewCustomerHomeView {
     }
 }
 
+#Preview {
+    NewCustomerHomeView()
+}

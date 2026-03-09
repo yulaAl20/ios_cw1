@@ -9,9 +9,22 @@ import SwiftUI
 
 @main
 struct ios_cw1App: App {
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @AppStorage("isLoggedIn") private var isLoggedIn = false
+    @StateObject private var appointmentStore = AppointmentStore()
+
     var body: some Scene {
         WindowGroup {
-            ServicesView()
+            if !hasSeenOnboarding {
+                OnboardingView()
+                    .environmentObject(appointmentStore)
+            } else if !isLoggedIn {
+                LoginView()
+                    .environmentObject(appointmentStore)
+            } else {
+                HomeView()
+                    .environmentObject(appointmentStore)
+            }
         }
     }
 }
