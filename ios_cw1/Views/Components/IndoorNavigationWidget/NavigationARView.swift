@@ -19,9 +19,9 @@ struct NavigationARView: View {
             // Simulated Camera Background
             LinearGradient(
                 gradient: Gradient(colors: [
-                    Color(red: 0.1, green: 0.15, blue: 0.25),
-                    Color(red: 0.15, green: 0.2, blue: 0.3),
-                    Color(red: 0.1, green: 0.15, blue: 0.25)
+                    Color.white,
+                    Color(.systemGray6),
+                    Color.white
                 ]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -40,7 +40,7 @@ struct NavigationARView: View {
                             path.addLine(to: CGPoint(x: geo.size.width, y: i))
                         }
                     }
-                    .stroke(Color.blue.opacity(0.05), lineWidth: 0.5)
+                    .stroke(Color.blue.opacity(0.1), lineWidth: 0.5)
                 }
             )
             
@@ -58,11 +58,12 @@ struct NavigationARView: View {
                                 Text("Back")
                                     .font(.system(size: 14, weight: .semibold))
                             }
-                            .foregroundColor(.white)
+                            .foregroundColor(.blue)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(Color.black.opacity(0.6))
+                            .background(Color.white)
                             .cornerRadius(20)
+                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
                         }
                         
                         Spacer()
@@ -84,8 +85,9 @@ struct NavigationARView: View {
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.black.opacity(0.6))
+                        .background(Color.white)
                         .cornerRadius(20)
+                        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
                         
                         Spacer()
                         
@@ -95,8 +97,9 @@ struct NavigationARView: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(Color.blue.opacity(0.7))
+                            .background(Color.blue)
                             .cornerRadius(20)
+                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 60)
@@ -108,7 +111,7 @@ struct NavigationARView: View {
                                 LinearGradient(
                                     gradient: Gradient(colors: [
                                         Color.blue.opacity(0),
-                                        Color.blue.opacity(0.3),
+                                        Color.blue.opacity(0.2),
                                         Color.blue.opacity(0)
                                     ]),
                                     startPoint: .top,
@@ -131,7 +134,7 @@ struct NavigationARView: View {
                         ForEach(0..<3, id: \.self) { index in
                             Image(systemName: "chevron.up")
                                 .font(.system(size: 50, weight: .bold))
-                                .foregroundColor(.cyan)
+                                .foregroundColor(.blue)
                                 .opacity(0.8 - Double(index) * 0.25)
                                 .offset(y: animationOffset - CGFloat(index * 20))
                         }
@@ -143,11 +146,11 @@ struct NavigationARView: View {
                         VStack(spacing: 8) {
                             Text("STEP \(currentStep.stepNumber)")
                                 .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.cyan)
+                                .foregroundColor(.blue)
                             
                             Text(currentStep.instruction)
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.white)
+                                .foregroundColor(.primary)
                                 .multilineTextAlignment(.center)
                                 .lineLimit(2)
                         }
@@ -155,11 +158,12 @@ struct NavigationARView: View {
                         .padding(.vertical, 16)
                         .background(
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.black.opacity(0.7))
+                                .fill(Color.white)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 16)
-                                        .stroke(Color.cyan.opacity(0.5), lineWidth: 2)
+                                        .stroke(Color.blue.opacity(0.3), lineWidth: 2)
                                 )
+                                .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
                         )
                         .padding(.horizontal, 30)
                     }
@@ -179,16 +183,16 @@ struct NavigationARView: View {
                                 Text("DISTANCE")
                                     .font(.system(size: 10, weight: .bold))
                             }
-                            .foregroundColor(.gray)
+                            .foregroundColor(.secondary)
                             
                             Text("\(route.distance)m")
                                 .font(.system(size: 28, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(.primary)
                         }
                         
                         // Divider
                         Rectangle()
-                            .fill(Color.gray.opacity(0.5))
+                            .fill(Color.gray.opacity(0.3))
                             .frame(width: 1, height: 50)
                         
                         // Time
@@ -199,37 +203,38 @@ struct NavigationARView: View {
                                 Text("ETA")
                                     .font(.system(size: 10, weight: .bold))
                             }
-                            .foregroundColor(.gray)
+                            .foregroundColor(.secondary)
                             
                             Text("\(route.estimatedTime) min")
                                 .font(.system(size: 28, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(.primary)
                         }
                     }
                     .padding(.horizontal, 30)
                     .padding(.vertical, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 20)
-                            .fill(Color.black.opacity(0.7))
+                            .fill(Color.white)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 20)
-                                    .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                                    .stroke(Color.blue.opacity(0.2), lineWidth: 1)
                             )
+                            .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
                     )
                     
                     // Compass/Direction Indicator
                     HStack(spacing: 12) {
                         Image(systemName: "location.north.fill")
                             .font(.system(size: 20))
-                            .foregroundColor(.cyan)
+                            .foregroundColor(.blue)
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text("HEADING")
                                 .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.gray)
+                                .foregroundColor(.secondary)
                             Text("North • Straight Ahead")
                                 .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(.white)
+                                .foregroundColor(.primary)
                         }
                         
                         Spacer()
@@ -238,7 +243,8 @@ struct NavigationARView: View {
                     .padding(.vertical, 12)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.black.opacity(0.6))
+                            .fill(Color.white)
+                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
                     )
                     .padding(.horizontal, 20)
                     
@@ -252,10 +258,10 @@ struct NavigationARView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("DESTINATION")
                                 .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.gray)
+                                .foregroundColor(.secondary)
                             Text(route.end)
                                 .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(.white)
+                                .foregroundColor(.primary)
                         }
                         
                         Spacer()
@@ -264,7 +270,8 @@ struct NavigationARView: View {
                     .padding(.vertical, 12)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.black.opacity(0.6))
+                            .fill(Color.white)
+                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
                     )
                     .padding(.horizontal, 20)
                 }
@@ -274,16 +281,16 @@ struct NavigationARView: View {
             // AR Crosshair Center
             ZStack {
                 Circle()
-                    .stroke(Color.cyan.opacity(0.5), lineWidth: 2)
+                    .stroke(Color.blue.opacity(0.4), lineWidth: 2)
                     .frame(width: 60, height: 60)
                 
                 Circle()
-                    .stroke(Color.cyan.opacity(0.3), lineWidth: 1)
+                    .stroke(Color.blue.opacity(0.2), lineWidth: 1)
                     .frame(width: 80, height: 80)
                 
                 // Center dot
                 Circle()
-                    .fill(Color.cyan)
+                    .fill(Color.blue)
                     .frame(width: 6, height: 6)
                 
                 // Crosshair lines
@@ -297,7 +304,7 @@ struct NavigationARView: View {
                     path.move(to: CGPoint(x: 0, y: 20))
                     path.addLine(to: CGPoint(x: 0, y: 40))
                 }
-                .stroke(Color.cyan.opacity(0.6), lineWidth: 2)
+                .stroke(Color.blue.opacity(0.5), lineWidth: 2)
             }
             .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
         }
