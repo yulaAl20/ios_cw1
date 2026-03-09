@@ -101,6 +101,21 @@ struct NavigationRoute {
             ),
             
             NavigationRoute(
+                start: "Room 203",
+                end: "Pediatrics",
+                floor: "Floor 2",
+                distance: 45,
+                estimatedTime: 2,
+                steps: [
+                    NavigationStep(instruction: "Exit Room 203", stepNumber: 1, distance: 0),
+                    NavigationStep(instruction: "Turn left and walk down the corridor", stepNumber: 2, distance: 15),
+                    NavigationStep(instruction: "Continue past Cardiology department", stepNumber: 3, distance: 15),
+                    NavigationStep(instruction: "Pediatrics is on your left", stepNumber: 4, distance: 15)
+                ],
+                pathLocations: ["Room 203", "Cardiology", "Pediatrics"]
+            ),
+            
+            NavigationRoute(
                 start: "Main Lab",
                 end: "Cafeteria",
                 floor: "Floor 3",
@@ -679,7 +694,8 @@ struct IndoorNavigationView: View {
         
         return ZStack {
             
-            if route.start == "Reception" && route.end == "Waiting Area" {
+            if (route.start == "Reception" && route.end == "Waiting Area") ||
+               (route.start == "Waiting Area" && route.end == "Reception") {
                 
                 if let start = positions["Reception"],
                    let end = positions["Waiting Area"] {
@@ -703,7 +719,8 @@ struct IndoorNavigationView: View {
                 }
             }
             
-            if route.start == "Reception" && route.end == "Emergency Dept" {
+            if (route.start == "Reception" && route.end == "Emergency Dept") ||
+               (route.start == "Emergency Dept" && route.end == "Reception") {
                 
                 if let start = positions["Reception"],
                    let end = positions["Emergency Dept"] {
@@ -719,6 +736,35 @@ struct IndoorNavigationView: View {
                         path.addLine(to: CGPoint(x: width * 0.35, y: height * 0.35))
                         
                         // Go down to Emergency Dept
+                        path.addLine(to: end)
+                    }
+                    .stroke(
+                        Color.blue,
+                        style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                    )
+                }
+            }
+            
+            if (route.start == "Room 203" && route.end == "Pediatrics") ||
+               (route.start == "Pediatrics" && route.end == "Room 203") {
+                
+                if let start = positions["Room 203"],
+                   let end = positions["Pediatrics"] {
+                    
+                    Path { path in
+                        
+                        path.move(to: start)
+                        
+                        // Go down from Room 203
+                        path.addLine(to: CGPoint(x: width * 0.52, y: height * 0.25))
+                        
+                        // Turn left towards the main corridor
+                        path.addLine(to: CGPoint(x: width * 0.35, y: height * 0.25))
+                        
+                        // Go down past Cardiology
+                        path.addLine(to: CGPoint(x: width * 0.35, y: height * 0.45))
+                        
+                        // Continue down to Pediatrics
                         path.addLine(to: end)
                     }
                     .stroke(
@@ -882,8 +928,6 @@ struct IndoorNavigationView: View {
     
     // Helper function to check if a location exists on a specific floor
     private func isLocationOnFloor(_ locationName: String, floor: String) -> Bool {
-        // Temporarily get locations for the specified floor
-        let currentSelectedFloor = selectedFloor
         let locations = getLocationPositionsForFloor(floor: floor, width: 100, height: 100)
         return locations.keys.contains(locationName)
     }
