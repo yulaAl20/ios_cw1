@@ -37,17 +37,16 @@ struct NewCustomerHomeView: View {
             
             
             // Scrollable Content
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 24) {
-                    
+            ScrollView(showsIndicators: false){
+                VStack(spacing: 24) {
                     Spacer()
-                        .frame(height: 30)
+                        .frame(height: 100)
                     
                     quickServicesSection
                     bookAppointmentCard
                     topDoctorsSection
                     
-                    Spacer(minLength: 160)
+                    Spacer(minLength: 20)
                 }
                 .padding(.horizontal, 20)
             }

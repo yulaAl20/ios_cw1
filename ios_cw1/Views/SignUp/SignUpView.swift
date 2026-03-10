@@ -183,7 +183,8 @@ struct SignUpView: View {
                                 .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
                         }
                         .padding(.horizontal, 30)
-                        .disabled(viewModel.isLoading)
+                        .disabled(viewModel.isLoading || viewModel.callingName.trimmingCharacters(in: .whitespaces).isEmpty || viewModel.phoneNumber.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .opacity((viewModel.callingName.trimmingCharacters(in: .whitespaces).isEmpty || viewModel.phoneNumber.trimmingCharacters(in: .whitespaces).isEmpty) ? 0.5 : 1.0)
                         
                         // Divider with text
                         HStack {
