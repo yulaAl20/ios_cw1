@@ -15,16 +15,18 @@ struct ios_cw1App: App {
 
     var body: some Scene {
         WindowGroup {
-            if !hasSeenOnboarding {
-                OnboardingView()
-                    .environmentObject(appointmentStore)
-            } else if !isLoggedIn {
-                LoginView()
-                    .environmentObject(appointmentStore)
-            } else {
-                HomeView()
-                    .environmentObject(appointmentStore)
-            }
+            HomeView()
+                        .environmentObject(appointmentStore)
+//            if !hasSeenOnboarding {
+//                OnboardingView()
+//                    .environmentObject(appointmentStore)
+//            } else if !isLoggedIn {
+//                LoginView()
+//                    .environmentObject(appointmentStore)
+//            } else {
+//                HomeView()
+//                    .environmentObject(appointmentStore)
+//            }
         }
     }
 }
