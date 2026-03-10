@@ -33,13 +33,8 @@ class PaymentViewModel: ObservableObject {
     var discount: Double { 0.0 }
     var totalAmount: Double { totalPrice + labVisitFee - discount }
     
-    // Generate unique receipt number - lazy initialization
-    lazy var receiptNumber: String = {
-        let prefix = "RCP"
-        let timestamp = Int(Date().timeIntervalSince1970) % 1000000
-        let random = Int.random(in: 100...999)
-        return "\(prefix)-\(timestamp)-\(random)"
-    }()
+    // Generate unique receipt number
+    let receiptNumber: String
     
     var canProceed: Bool {
         switch selectedPaymentMethod {
@@ -55,6 +50,10 @@ class PaymentViewModel: ObservableObject {
     // Initializer
     init(totalPrice: Double) {
         self.totalPrice = totalPrice
+        let prefix = "RCP"
+        let timestamp = Int(Date().timeIntervalSince1970) % 1000000
+        let random = Int.random(in: 100...999)
+        self.receiptNumber = "\(prefix)-\(timestamp)-\(random)"
     }
     
     //  Actions
@@ -90,6 +89,11 @@ class PaymentViewModel: ObservableObject {
     //  QR Code Generation
     
     func generatePaymentQRCode() -> UIImage? {
+        // Guard against preview environment where CoreImage can crash
+        guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" else {
+            return nil
+        }
+        
         let qrData = """
         {
             "type": "lab_payment",

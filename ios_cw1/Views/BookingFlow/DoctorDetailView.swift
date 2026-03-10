@@ -96,7 +96,7 @@ struct DoctorDetailView: View {
             .background(Color(.systemBackground))
 
             VStack {
-                NavigationLink(destination: BookingDateView(doctor: doctor, onFlowComplete: onFlowComplete)) {   // <-- Pass closure
+                NavigationLink(destination: BookingTimeView(doctor: doctor, onFlowComplete: onFlowComplete)) {
                     Text("Book Appointment")
                         .font(.headline)
                         .foregroundColor(.white)
