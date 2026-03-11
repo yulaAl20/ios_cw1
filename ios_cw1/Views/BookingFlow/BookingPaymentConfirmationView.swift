@@ -609,8 +609,9 @@ struct BookingPaymentConfirmationView: View {
             Button("Done") {
                 saveAppointment()
                 isPresented = false
-                // Switch to appointments tab after dismissal
+                // Switch to appointments tab -> Upcoming after dismissal
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    router.appointmentsInitialTab = "Upcoming"
                     router.currentTab = 2
                 }
             }

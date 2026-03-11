@@ -112,9 +112,7 @@ struct ServicesView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 8)
                     
-                    SearchBarView(placeholder: "Search Labs/Scans")
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 8)
+                   
                     
                 }
                 .background(Color(red: 0.82, green: 0.88, blue: 0.96))

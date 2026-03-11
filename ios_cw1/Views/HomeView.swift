@@ -81,55 +81,50 @@ struct HomeView: View {
 extension HomeView {
     
     var activeQueueCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Your Turn in 10 minutes")
-                        .font(.headline)
+        Button(action: {
+            router.appointmentsInitialTab = "Ongoing"
+            router.currentTab = 2
+        }) {
+            VStack(alignment: .leading, spacing: 14) {
+                
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Your Turn in 10 minutes")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.primary)
+                        
+                        Text("OPD Room 2")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        
+                        Text("Current Queue 3 of 17")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
                     
-                    Text("OPD Room 2\nCurrent Queue 3 of 17")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                }
-                
-                Spacer()
-                
-                VStack {
-                    Text("Queue no.")
-                        .font(.subheadline)
-                        .foregroundColor(.blue)
-                    Text("#6")
-                        .font(.title)
-                        .bold()
-                        .foregroundColor(.blue)
-                }
-            }
-            
-            HStack {
-                Button("Leave Queue") {}
-                    .font(.subheadline)
+                    Spacer()
+                    
+                    VStack(spacing: 4) {
+                        Text("Queue no.")
+                            .font(.system(size: 13))
+                            .foregroundColor(.blue)
+                        Text("#6")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundColor(.blue)
+                    }
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemGray5))
-                    .cornerRadius(20)
-                
-                Spacer()
-                
-                Button("Reschedule") {}
-                    .font(.subheadline)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 8)
-                    .background(Color.blue)
-                    .cornerRadius(20)
+                    .padding(.vertical, 10)
+                    .background(Color.blue.opacity(0.08))
+                    .cornerRadius(14)
+                }
             }
+            .padding(18)
+            .background(Color.white)
+            .cornerRadius(24)
+            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
+            .offset(y: 6)
         }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(24)
-        .shadow(radius: 4)
-        .offset(y: 6)
+        .buttonStyle(.plain)
     }
     
     var bookAppointmentCard: some View {

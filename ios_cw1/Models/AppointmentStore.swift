@@ -56,6 +56,26 @@ class AppointmentStore: ObservableObject {
     @Published var appointments: [Appointment] = []
     @Published var currentAppointment: AppointmentDetails?
     
+    init() {
+        // Hardcoded ongoing appointment matching HomeView active queue card
+        appointments.append(
+            Appointment(
+                doctorName: "Dr. Jenny Wilson",
+                specialty: "General Physician",
+                location: "OPD Room 2",
+                token: "06",
+                queuePosition: 3,
+                date: Date(),
+                timeSlot: "10:00 AM",
+                status: .ongoing,
+                isTest: false,
+                patientName: "John Doe",
+                patientPhone: "0762182199",
+                totalAmount: 2300
+            )
+        )
+    }
+    
     func addAppointment(_ appointment: Appointment) {
         appointments.append(appointment)
         

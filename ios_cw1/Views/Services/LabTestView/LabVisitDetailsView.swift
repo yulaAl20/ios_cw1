@@ -10,6 +10,8 @@ import SwiftUI
 struct LabVisitDetailsView: View {
     
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var appointmentStore: AppointmentStore
+    @EnvironmentObject var router: AppRouter
     @StateObject private var viewModel: LabVisitDetailsViewModel
     
     // Sheet states
@@ -82,8 +84,15 @@ struct LabVisitDetailsView: View {
         .sheet(isPresented: $showPaymentSheet) {
             LabPaymentConfirmationView(
                 totalPrice: viewModel.totalPrice,
-                isPresented: $showPaymentSheet
+                isPresented: $showPaymentSheet,
+                testName: viewModel.selectedTests.map { $0.name }.joined(separator: ", "),
+                labLocation: viewModel.selectedLocation.name,
+                selectedDate: viewModel.selectedDate,
+                selectedTimeSlot: viewModel.selectedTimeSlot.startTime,
+                patientName: viewModel.selectedPatient
             )
+            .environmentObject(appointmentStore)
+            .environmentObject(router)
             .presentationDetents([.large])
             .interactiveDismissDisabled()
         }

@@ -10,6 +10,14 @@ import SwiftUI
 struct LabPaymentConfirmationView: View {
     @Binding var isPresented: Bool
     @StateObject private var viewModel: PaymentViewModel
+    @EnvironmentObject var appointmentStore: AppointmentStore
+    @EnvironmentObject var router: AppRouter
+    
+    let testName: String
+    let labLocation: String
+    let selectedDate: Date
+    let selectedTimeSlot: String
+    let patientName: String
     
     @State private var showDiscountCodeSheet = false
     @State private var discountCode = ""
@@ -17,9 +25,14 @@ struct LabPaymentConfirmationView: View {
     @State private var appliedDiscountCode = ""
     @State private var discountError = ""
     
-    init(totalPrice: Double, isPresented: Binding<Bool>) {
+    init(totalPrice: Double, isPresented: Binding<Bool>, testName: String, labLocation: String, selectedDate: Date, selectedTimeSlot: String, patientName: String) {
         self._isPresented = isPresented
         self._viewModel = StateObject(wrappedValue: PaymentViewModel(totalPrice: totalPrice))
+        self.testName = testName
+        self.labLocation = labLocation
+        self.selectedDate = selectedDate
+        self.selectedTimeSlot = selectedTimeSlot
+        self.patientName = patientName
     }
     
     var totalWithDiscount: Double {
@@ -99,13 +112,27 @@ struct LabPaymentConfirmationView: View {
         if viewModel.selectedPaymentMethod == .counter {
             PayAtCounterSuccessView(
                 viewModel: viewModel,
-                isPresented: $isPresented
+                isPresented: $isPresented,
+                testName: testName,
+                labLocation: labLocation,
+                selectedDate: selectedDate,
+                selectedTimeSlot: selectedTimeSlot,
+                patientName: patientName
             )
+            .environmentObject(appointmentStore)
+            .environmentObject(router)
         } else {
             RegularPaymentSuccessView(
                 viewModel: viewModel,
-                isPresented: $isPresented
+                isPresented: $isPresented,
+                testName: testName,
+                labLocation: labLocation,
+                selectedDate: selectedDate,
+                selectedTimeSlot: selectedTimeSlot,
+                patientName: patientName
             )
+            .environmentObject(appointmentStore)
+            .environmentObject(router)
         }
     }
     
@@ -422,6 +449,14 @@ struct LabPaymentConfirmationView: View {
 struct PayAtCounterSuccessView: View {
     @ObservedObject var viewModel: PaymentViewModel
     @Binding var isPresented: Bool
+    @EnvironmentObject var appointmentStore: AppointmentStore
+    @EnvironmentObject var router: AppRouter
+    
+    let testName: String
+    let labLocation: String
+    let selectedDate: Date
+    let selectedTimeSlot: String
+    let patientName: String
     
     @State private var showShareSheet = false
     @State private var showDownloadAlert = false
@@ -591,6 +626,23 @@ struct PayAtCounterSuccessView: View {
                 
                 // Done Button (inside scroll view, not fixed)
                 Button("Done") {
+                    let appointment = Appointment(
+                        doctorName: testName,
+                        specialty: "Lab",
+                        location: labLocation,
+                        token: String(format: "%02d", Int.random(in: 1...99)),
+                        queuePosition: nil,
+                        date: selectedDate,
+                        timeSlot: selectedTimeSlot,
+                        status: .upcoming,
+                        isTest: true,
+                        patientName: patientName,
+                        patientPhone: "",
+                        totalAmount: viewModel.totalAmount
+                    )
+                    appointmentStore.addAppointment(appointment)
+                    router.appointmentsInitialTab = "Upcoming"
+                    router.currentTab = 2
                     isPresented = false
                 }
                 .font(.system(size: 17, weight: .semibold))
@@ -621,6 +673,14 @@ struct PayAtCounterSuccessView: View {
 struct RegularPaymentSuccessView: View {
     @ObservedObject var viewModel: PaymentViewModel
     @Binding var isPresented: Bool
+    @EnvironmentObject var appointmentStore: AppointmentStore
+    @EnvironmentObject var router: AppRouter
+    
+    let testName: String
+    let labLocation: String
+    let selectedDate: Date
+    let selectedTimeSlot: String
+    let patientName: String
     
     @State private var showShareSheet = false
     @State private var showDownloadAlert = false
@@ -807,6 +867,23 @@ struct RegularPaymentSuccessView: View {
                 
                 // Done Button (inside scroll view, not fixed)
                 Button("Done") {
+                    let appointment = Appointment(
+                        doctorName: testName,
+                        specialty: "Lab",
+                        location: labLocation,
+                        token: String(format: "%02d", Int.random(in: 1...99)),
+                        queuePosition: nil,
+                        date: selectedDate,
+                        timeSlot: selectedTimeSlot,
+                        status: .upcoming,
+                        isTest: true,
+                        patientName: patientName,
+                        patientPhone: "",
+                        totalAmount: viewModel.totalAmount
+                    )
+                    appointmentStore.addAppointment(appointment)
+                    router.appointmentsInitialTab = "Upcoming"
+                    router.currentTab = 2
                     isPresented = false
                 }
                 .font(.system(size: 17, weight: .semibold))
@@ -985,6 +1062,13 @@ struct DiscountCodeSheet: View {
 #Preview {
     LabPaymentConfirmationView(
         totalPrice: 1500.00,
-        isPresented: .constant(true)
+        isPresented: .constant(true),
+        testName: "Fasting Blood Glucose",
+        labLocation: "CityCare Main Lab",
+        selectedDate: Date(),
+        selectedTimeSlot: "09:00 AM",
+        patientName: "John Doe"
     )
+    .environmentObject(AppointmentStore())
+    .environmentObject(AppRouter())
 }

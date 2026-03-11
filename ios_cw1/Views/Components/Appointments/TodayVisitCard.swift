@@ -174,20 +174,13 @@ private struct OngoingCard: View {
                         .font(.system(size: 17, weight: .bold))
                         .foregroundColor(.primary)
 
-                    HStack(spacing: 4) {
-                        Circle()
-                            .fill(Color(.systemGray4))
-                            .frame(width: 5, height: 5)
-                        Text(specialty)
-                            .font(.system(size: 13))
-                            .foregroundColor(Color(.systemGray))
-                        Circle()
-                            .fill(Color(.systemGray4))
-                            .frame(width: 5, height: 5)
-                        Text(location)
-                            .font(.system(size: 13))
-                            .foregroundColor(Color(.systemGray))
-                    }
+                    Text(specialty)
+                        .font(.system(size: 12))
+                        .foregroundColor(Color(.systemGray))
+
+                    Text(location)
+                        .font(.system(size: 12))
+                        .foregroundColor(Color(.systemGray))
                 }
 
                 Spacer()

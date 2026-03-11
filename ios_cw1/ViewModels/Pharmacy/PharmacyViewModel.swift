@@ -185,6 +185,7 @@ class PharmacyViewModel: ObservableObject {
     // Prescription review simulation - after 10 seconds, pharmacist "reviews" the prescription
     // Adds hardcoded prescription medicines and updates total, then sets status to readyForPayment
     private func simulatePrescriptionReview(_ order: PharmacyOrder) {
+        
         guard let index = activeOrders.firstIndex(where: { $0.id == order.id }) else { return }
         
         // After 3 seconds: set to under review

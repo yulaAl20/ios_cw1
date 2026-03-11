@@ -19,6 +19,7 @@ struct AppointmentsView: View {
     @State private var appointmentToCancel: Appointment? = nil
     @State private var appointmentToReschedule: Appointment? = nil
     @State private var showReschedule = false
+    @State private var showLabReschedule = false
 
     private var currentAppointments: [Appointment] {
         switch selectedTab {
@@ -29,16 +30,33 @@ struct AppointmentsView: View {
         }
     }
 
-    private var todayVisits: [Appointment] {
-        currentAppointments.filter { Calendar.current.isDateInToday($0.date) }
+    // Doctor visits
+    private var todayDoctorVisits: [Appointment] {
+        currentAppointments.filter { Calendar.current.isDateInToday($0.date) && !$0.isTest }
+    }
+    private var futureDoctorVisits: [Appointment] {
+        currentAppointments.filter { !Calendar.current.isDateInToday($0.date) && $0.date > Date() && !$0.isTest }
+    }
+    private var pastDoctorVisits: [Appointment] {
+        currentAppointments.filter { !$0.isTest }
     }
 
-    private var futureVisits: [Appointment] {
-        currentAppointments.filter { !Calendar.current.isDateInToday($0.date) && $0.date > Date() }
+    // Test / Lab appointments
+    private var todayLabVisits: [Appointment] {
+        currentAppointments.filter { Calendar.current.isDateInToday($0.date) && $0.isTest }
+    }
+    private var futureLabVisits: [Appointment] {
+        currentAppointments.filter { !Calendar.current.isDateInToday($0.date) && $0.date > Date() && $0.isTest }
+    }
+    private var pastLabVisits: [Appointment] {
+        currentAppointments.filter { $0.isTest }
     }
 
-    private var pastVisits: [Appointment] {
-        currentAppointments
+    private var hasDoctorAppointments: Bool {
+        !todayDoctorVisits.isEmpty || !futureDoctorVisits.isEmpty
+    }
+    private var hasLabAppointments: Bool {
+        !todayLabVisits.isEmpty || !futureLabVisits.isEmpty
     }
 
     private func doctorForAppointment(_ appointment: Appointment) -> Doctor {
@@ -63,6 +81,32 @@ struct AppointmentsView: View {
             timeSlots: [],
             bio: "",
             availability: ""
+        )
+    }
+
+    @ViewBuilder
+    private func upcomingCard(for visit: Appointment) -> some View {
+        TodayVisitCard(
+            type: .upcoming(
+                doctor: visit.doctorName,
+                specialty: visit.specialty,
+                location: visit.location,
+                token: visit.token ?? "",
+                timeSlot: visit.timeSlot,
+                isTest: visit.isTest
+            ),
+            onCancel: {
+                appointmentToCancel = visit
+                showCancelAlert = true
+            },
+            onReschedule: {
+                appointmentToReschedule = visit
+                if visit.isTest {
+                    showLabReschedule = true
+                } else {
+                    showReschedule = true
+                }
+            }
         )
     }
 
@@ -95,62 +139,51 @@ struct AppointmentsView: View {
                             }
 
                         if selectedTab == "Upcoming" {
-                            if !todayVisits.isEmpty {
-                                AppointmentSectionHeader(title: "Today's Visits")
-                                ForEach(todayVisits) { visit in
-                                    TodayVisitCard(
-                                        type: .upcoming(
-                                            doctor: visit.doctorName,
-                                            specialty: visit.specialty,
-                                            location: visit.location,
-                                            token: visit.token ?? "",
-                                            timeSlot: visit.timeSlot,
-                                            isTest: visit.isTest
-                                        ),
-                                        onCancel: {
-                                            appointmentToCancel = visit
-                                            showCancelAlert = true
-                                        },
-                                        onReschedule: {
-                                            appointmentToReschedule = visit
-                                            showReschedule = true
-                                        }
-                                    )
+                            // — Doctor Visits —
+                            if hasDoctorAppointments {
+                                AppointmentSectionHeader(title: "Doctor Visits")
+                            }
+                            if !todayDoctorVisits.isEmpty {
+                                AppointmentSubheader(title: "Today")
+                                ForEach(todayDoctorVisits) { visit in
+                                    upcomingCard(for: visit)
+                                }
+                            }
+                            if !futureDoctorVisits.isEmpty {
+                                AppointmentSubheader(title: "Upcoming")
+                                ForEach(futureDoctorVisits) { visit in
+                                    upcomingCard(for: visit)
                                 }
                             }
 
-                            if !futureVisits.isEmpty {
-                                AppointmentSectionHeader(title: "Upcoming Visits")
-                                ForEach(futureVisits) { visit in
-                                    TodayVisitCard(
-                                        type: .upcoming(
-                                            doctor: visit.doctorName,
-                                            specialty: visit.specialty,
-                                            location: visit.location,
-                                            token: visit.token ?? "",
-                                            timeSlot: visit.timeSlot,
-                                            isTest: visit.isTest
-                                        ),
-                                        onCancel: {
-                                            appointmentToCancel = visit
-                                            showCancelAlert = true
-                                        },
-                                        onReschedule: {
-                                            appointmentToReschedule = visit
-                                            showReschedule = true
-                                        }
-                                    )
+                            // — Test / Lab Appointments —
+                            if hasLabAppointments {
+                                AppointmentSectionHeader(title: "Test / Lab Appointments")
+                            }
+                            if !todayLabVisits.isEmpty {
+                                AppointmentSubheader(title: "Today")
+                                ForEach(todayLabVisits) { visit in
+                                    upcomingCard(for: visit)
+                                }
+                            }
+                            if !futureLabVisits.isEmpty {
+                                AppointmentSubheader(title: "Upcoming")
+                                ForEach(futureLabVisits) { visit in
+                                    upcomingCard(for: visit)
                                 }
                             }
 
-                            if todayVisits.isEmpty && futureVisits.isEmpty {
+                            if !hasDoctorAppointments && !hasLabAppointments {
                                 AppointmentEmptyState(icon: "calendar.badge.clock", message: "No upcoming appointments")
                             }
 
                         } else if selectedTab == "Ongoing" {
-                            if !todayVisits.isEmpty {
-                                AppointmentSectionHeader(title: "Today's Visits")
-                                ForEach(todayVisits) { visit in
+                            let ongoingDoctors = currentAppointments.filter { !$0.isTest }
+                            let ongoingLabs = currentAppointments.filter { $0.isTest }
+
+                            if !ongoingDoctors.isEmpty {
+                                AppointmentSectionHeader(title: "Doctor Visits")
+                                ForEach(ongoingDoctors) { visit in
                                     if let position = visit.queuePosition {
                                         TodayVisitCard(type: .ongoing(
                                             doctor: visit.doctorName,
@@ -162,14 +195,32 @@ struct AppointmentsView: View {
                                         ))
                                     }
                                 }
-                            } else {
+                            }
+
+                            if !ongoingLabs.isEmpty {
+                                AppointmentSectionHeader(title: "Test / Lab Appointments")
+                                ForEach(ongoingLabs) { visit in
+                                    if let position = visit.queuePosition {
+                                        TodayVisitCard(type: .ongoing(
+                                            doctor: visit.doctorName,
+                                            specialty: visit.specialty,
+                                            location: visit.location,
+                                            token: visit.token ?? "",
+                                            position: position,
+                                            isTest: visit.isTest
+                                        ))
+                                    }
+                                }
+                            }
+
+                            if ongoingDoctors.isEmpty && ongoingLabs.isEmpty {
                                 AppointmentEmptyState(icon: "clock.fill", message: "No ongoing appointments")
                             }
 
                         } else if selectedTab == "Completed" {
-                            if !pastVisits.isEmpty {
-                                AppointmentSectionHeader(title: "Past Visits")
-                                ForEach(pastVisits) { visit in
+                            if !pastDoctorVisits.isEmpty {
+                                AppointmentSectionHeader(title: "Doctor Visits")
+                                ForEach(pastDoctorVisits) { visit in
                                     PastVisitCard(
                                         title: visit.doctorName,
                                         subtitle: visit.specialty,
@@ -177,7 +228,21 @@ struct AppointmentsView: View {
                                         isTest: visit.isTest
                                     )
                                 }
-                            } else {
+                            }
+
+                            if !pastLabVisits.isEmpty {
+                                AppointmentSectionHeader(title: "Test / Lab Appointments")
+                                ForEach(pastLabVisits) { visit in
+                                    PastVisitCard(
+                                        title: visit.doctorName,
+                                        subtitle: visit.specialty,
+                                        date: visit.formattedDate,
+                                        isTest: visit.isTest
+                                    )
+                                }
+                            }
+
+                            if pastDoctorVisits.isEmpty && pastLabVisits.isEmpty {
                                 AppointmentEmptyState(icon: "checkmark.circle.fill", message: "No completed appointments")
                             }
                         }
@@ -189,7 +254,14 @@ struct AppointmentsView: View {
                 }
             }
             .navigationBarHidden(true)
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            .background(
+                LinearGradient(
+                    colors: [Color(red: 0.92, green: 0.96, blue: 1.0), Color(.systemGroupedBackground)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            )
             .alert("Confirm Cancellation", isPresented: $showCancelAlert) {
                 Button("No", role: .cancel) {
                     appointmentToCancel = nil
@@ -210,8 +282,28 @@ struct AppointmentsView: View {
                     BookingTimeView(doctor: doctorForAppointment(appointment))
                 }
             }
+            .navigationDestination(isPresented: $showLabReschedule) {
+                if let appointment = appointmentToReschedule {
+                    LabVisitDetailsView(
+                        selectedTests: [LabTest(name: appointment.doctorName, description: appointment.specialty, price: appointment.totalAmount, category: .blood)],
+                        totalPrice: appointment.totalAmount
+                    )
+                }
+            }
             .safeAreaInset(edge: .bottom) {
                 FloatingNavBarView(selectedTab: $router.currentTab)
+            }
+            .onAppear {
+                if let tab = router.appointmentsInitialTab {
+                    selectedTab = tab
+                    router.appointmentsInitialTab = nil
+                }
+            }
+            .onChange(of: router.appointmentsInitialTab) { newValue in
+                if let tab = newValue {
+                    selectedTab = tab
+                    router.appointmentsInitialTab = nil
+                }
             }
         }
     }
@@ -241,6 +333,15 @@ struct AppointmentEmptyState: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 60)
+    }
+}
+
+struct AppointmentSubheader: View {
+    let title: String
+    var body: some View {
+        Text(title)
+            .font(.system(size: 15, weight: .medium))
+            .foregroundColor(Color(.systemGray))
     }
 }
 
