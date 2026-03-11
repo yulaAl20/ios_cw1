@@ -59,7 +59,7 @@ struct HomeView: View {
                 
                 // header - sticky at top with safe area
                 VStack(spacing: 0) {
-                    HeaderView()
+                    HeaderView(title: "Clinic Flow")
                         .padding(.horizontal, 20)
                         .padding(.bottom, 10)
                 }
@@ -235,35 +235,40 @@ extension HomeView {
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
-                    doctorCard
-                    doctorCard
-                }
-            }
+                    
+                    doctorCard(
+                        image: "doctor1",
+                        name: "Dr. Emma Wilson",
+                        specialty: "Neurologist"
+                    )
+                    
+                    doctorCard(
+                        image: "doctor2",
+                        name: "Dr. Michael Lee",
+                        specialty: "Cardiologist"
+                    )
+                    
+                    doctorCard(
+                        image: "doctor3",
+                        name: "Dr. Sarah Parker",
+                        specialty: "Dermatologist"
+                    )
+                }            }
         }
     }
     
-    var doctorCard: some View {
+    func doctorCard(image: String, name: String, specialty: String) -> some View {
+        
         VStack(alignment: .leading, spacing: 8) {
             
             ZStack(alignment: .topLeading) {
-                //  image doctor
-                if UIImage(named: "doctor_placeholder") != nil {
-                    Image("doctor_placeholder")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 220, height: 220)
-                        .clipped()
-                        .cornerRadius(24)
-                } else {
-                    RoundedRectangle(cornerRadius: 24)
-                        .fill(Color(#colorLiteral(red: 0.88, green: 0.94, blue: 0.98, alpha: 1)))
-                        .frame(width: 220, height: 220)
-                        .overlay(
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 60))
-                                .foregroundColor(Color(#colorLiteral(red: 0.36, green: 0.62, blue: 0.86, alpha: 1)))
-                        )
-                }
+                
+                Image(image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 220, height: 220)
+                    .clipped()
+                    .cornerRadius(24)
                 
                 Text("⭐ 5.0")
                     .font(.caption)
@@ -273,10 +278,10 @@ extension HomeView {
                     .padding(8)
             }
             
-            Text("Dr. Emma Wilson")
+            Text(name)
                 .font(.headline)
             
-            Text("Neurologist")
+            Text(specialty)
                 .font(.subheadline)
                 .foregroundColor(.gray)
         }

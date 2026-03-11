@@ -24,7 +24,7 @@ struct HeaderView: View {
                         .font(.system(size: 24))
                         .foregroundColor(.black.opacity(0.6))
                 }
-                
+                Spacer()
                 if let title = title {
                     Text(title)
                         .font(.system(size: 18, weight: .semibold))
