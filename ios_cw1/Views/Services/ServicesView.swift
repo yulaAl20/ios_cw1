@@ -11,7 +11,8 @@ import Combine
 
 struct ServicesView: View {
     
-    @State private var selectedTab: Int = 1
+    //@State private var selectedTab: Int = 1
+    @EnvironmentObject var router: AppRouter
     @State private var currentCardIndex: Int = 0
     
     // Timer for auto-scroll
@@ -106,17 +107,20 @@ struct ServicesView: View {
                 VStack(spacing: 0) {
                     
                     HeaderView(
-                        title: "ClinicFlow Services",
-                        searchPlaceholder: "Search Labs/Scans"
+                        title: "ClinicFlow Services"
                     )
                     .padding(.horizontal, 20)
                     .padding(.bottom, 8)
+                    
+                    SearchBarView(placeholder: "Search Labs/Scans")
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 8)
                     
                 }
                 .background(Color(red: 0.82, green: 0.88, blue: 0.96))
             }
             .safeAreaInset(edge: .bottom) {
-                FloatingNavBarView(selectedTab: $selectedTab)
+                FloatingNavBarView(selectedTab: $router.currentTab)
             }
         }
     }
@@ -434,4 +438,6 @@ extension ServicesView {
 
 #Preview {
     ServicesView()
+        .environmentObject(AppRouter())
+        .environmentObject(AppointmentStore())
 }

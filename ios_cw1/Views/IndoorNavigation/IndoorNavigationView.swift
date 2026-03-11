@@ -174,7 +174,8 @@ struct NavigationStep: Identifiable {
 
 struct IndoorNavigationView: View {
     
-    @State private var selectedTab: Int = 3
+    //@State private var selectedTab: Int = 3
+    @EnvironmentObject var router: AppRouter
     @State private var startLocation: String = ""
     @State private var destination: String = ""
     @State private var selectedFloor: String = "Floor 1"
@@ -314,43 +315,9 @@ struct IndoorNavigationView: View {
             Color.white.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                HStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(Color(.systemGray6))
-                            .frame(width: 44, height: 44)
-                        Image(systemName: "person.circle")
-                            .font(.system(size: 24))
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    Text("Navigation")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.primary)
-                    
-                    Spacer()
-                    
-                    ZStack(alignment: .topTrailing) {
-                        ZStack {
-                            Circle()
-                                .fill(Color(.systemGray6))
-                                .frame(width: 44, height: 44)
-                            Image(systemName: "bell")
-                                .font(.system(size: 20))
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        Circle()
-                            .fill(Color.red)
-                            .frame(width: 10, height: 10)
-                            .offset(x: -8, y: 8)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
-                .padding(.bottom, 16)
+                HeaderView(title: "Navigation")
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 16)
                 
                 HStack(spacing: 12) {
                     VStack(spacing: 0) {
@@ -589,7 +556,7 @@ struct IndoorNavigationView: View {
                     .padding(.bottom, 12)
                 }
                 
-                FloatingNavBarView(selectedTab: $selectedTab)
+                FloatingNavBarView(selectedTab: $router.currentTab)
             }
         }
         .sheet(isPresented: $showLocationPicker) {
@@ -1156,4 +1123,6 @@ struct Room: Identifiable {
 
 #Preview {
     IndoorNavigationView()
+        .environmentObject(AppRouter())
+        .environmentObject(AppointmentStore())
 }

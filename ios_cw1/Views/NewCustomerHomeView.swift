@@ -6,7 +6,7 @@ import SwiftUI
 
 struct NewCustomerHomeView: View {
     
-    @State private var selectedTab: Int = 0
+    @EnvironmentObject var router: AppRouter
     @State private var animatePulse: Bool = false
     
     var body: some View {
@@ -53,16 +53,24 @@ struct NewCustomerHomeView: View {
             
             
             // Sticky Header
-            HeaderView()
-                .padding(.horizontal, 20)
-                .padding(.bottom, 4)
-                .background(Color.white)
+            VStack(spacing: 0) {
+                HeaderView(
+                    title: "ClinicFlow"
+                )
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 8)
+                
+                SearchBarView()
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 4)
+            }
+            .background(Color.white)
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 8) {
                 DirectionsBarView()
                     .padding(.horizontal, 16)
-                FloatingNavBarView(selectedTab: $selectedTab)
+                FloatingNavBarView(selectedTab: $router.currentTab)
             }
         }
         .onAppear { animatePulse = true }
@@ -132,7 +140,7 @@ extension NewCustomerHomeView {
                     )
                     .cornerRadius(20)
             }
-            .scaleEffect(animatePulse ? 1.02 : 1.0)
+          //  .scaleEffect(animatePulse ? 1.02 : 1.0)
             .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: animatePulse)
             
             Text("Find a doctor and schedule your visit instantly")
@@ -183,4 +191,5 @@ extension NewCustomerHomeView {
 
 #Preview {
     NewCustomerHomeView()
+        .environmentObject(AppRouter())
 }

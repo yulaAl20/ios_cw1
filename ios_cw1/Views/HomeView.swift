@@ -10,7 +10,8 @@ import UIKit
 
 struct HomeView: View {
     
-    @State private var selectedTab: Int = 0
+    @EnvironmentObject var router: AppRouter
+    @EnvironmentObject var appointmentStore: AppointmentStore
     @State private var animatePulse: Bool = false
     
     var body: some View {
@@ -38,15 +39,16 @@ struct HomeView: View {
                 .ignoresSafeArea()
                 
                 
-                // SCROLLABLE CONTENT
+                // Scrollable Content
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 24) {
                         
-                        // Space for header (header height + safe area + padding)
                         Color.clear
                             .frame(height: 120)
                         
-                        activeQueueCard
+                        if appointmentStore.currentAppointment != nil {
+                            activeQueueCard
+                        }
                         quickServicesSection
                         bookAppointmentCard
                         topDoctorsSection
@@ -57,9 +59,15 @@ struct HomeView: View {
                 }
                 
                 
-                // header - sticky at top with safe area
+                // Header
                 VStack(spacing: 0) {
-                    HeaderView()
+                    HeaderView(
+                    title: "ClinicFlow"
+                    )
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 8)
+                    
+                    SearchBarView()
                         .padding(.horizontal, 20)
                         .padding(.bottom, 10)
                 }
@@ -69,7 +77,8 @@ struct HomeView: View {
                 VStack(spacing: 8) {
                     DirectionsBarView()
                         .padding(.horizontal, 16)
-                    FloatingNavBarView(selectedTab: $selectedTab)
+                    
+                    FloatingNavBarView(selectedTab: $router.currentTab)
                 }
             }
             .navigationBarHidden(true)
@@ -77,13 +86,13 @@ struct HomeView: View {
     }
 }
 
-
 extension HomeView {
     
     var activeQueueCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             
             HStack {
+                
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Your Turn in 10 minutes")
                         .font(.headline)
@@ -99,6 +108,7 @@ extension HomeView {
                     Text("Queue no.")
                         .font(.subheadline)
                         .foregroundColor(.blue)
+                    
                     Text("#6")
                         .font(.title)
                         .bold()
@@ -107,6 +117,7 @@ extension HomeView {
             }
             
             HStack {
+                
                 Button("Leave Queue") {}
                     .font(.subheadline)
                     .padding(.horizontal, 16)
@@ -132,6 +143,7 @@ extension HomeView {
         .offset(y: 6)
     }
     
+    
     var bookAppointmentCard: some View {
         VStack(spacing: 12) {
             
@@ -142,12 +154,20 @@ extension HomeView {
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(
-                        LinearGradient(colors: [Color(#colorLiteral(red: 0.0, green: 0.48, blue: 0.78, alpha: 1)), Color(#colorLiteral(red: 0.09, green: 0.59, blue: 0.83, alpha: 1))], startPoint: .topLeading, endPoint: .bottomTrailing)
+                        LinearGradient(
+                            colors: [
+                                Color(#colorLiteral(red: 0.0, green: 0.48, blue: 0.78, alpha: 1)),
+                                Color(#colorLiteral(red: 0.09, green: 0.59, blue: 0.83, alpha: 1))
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     )
                     .cornerRadius(20)
             }
-            .scaleEffect(animatePulse ? 1.02 : 1.0)
-            .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: animatePulse)
+            .onAppear {
+                animatePulse = true
+            }
             
             Text("Find a doctor and schedule your visit instantly")
                 .font(.subheadline)
@@ -159,6 +179,7 @@ extension HomeView {
         .shadow(radius: 4)
     }
     
+    
     var quickServicesSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             
@@ -166,12 +187,19 @@ extension HomeView {
                 .font(.headline)
             
             HStack(spacing: 0) {
-                quickServiceItem(icon: "stethoscope", title: "Find\nDoctor", color: .blue)
-                quickServiceItem(icon: "cross.case.fill", title: "Lab\nReports", color: .green)
                 
-                // Pharmacy with navigation
+                quickServiceItem(icon: "stethoscope",
+                                 title: "Find\nDoctor",
+                                 color: .blue)
+                
+                quickServiceItem(icon: "cross.case.fill",
+                                 title: "Lab\nReports",
+                                 color: .green)
+                
                 NavigationLink(destination: PharmacyView()) {
+                    
                     VStack(spacing: 6) {
+                        
                         ZStack {
                             Circle()
                                 .fill(Color.orange.opacity(0.12))
@@ -193,7 +221,9 @@ extension HomeView {
                 }
                 .buttonStyle(.plain)
                 
-                quickServiceItem(icon: "waveform.path.ecg", title: "Scans", color: .purple)
+                quickServiceItem(icon: "waveform.path.ecg",
+                                 title: "Scans",
+                                 color: .purple)
             }
         }
         .padding()
@@ -201,12 +231,16 @@ extension HomeView {
             RoundedRectangle(cornerRadius: 24)
                 .fill(Color.white)
         )
-        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
-    
+        .shadow(color: .black.opacity(0.05),
+                radius: 8,
+                x: 0,
+                y: 4)
     }
+    
     
     func quickServiceItem(icon: String, title: String, color: Color) -> some View {
         VStack(spacing: 6) {
+            
             ZStack {
                 Circle()
                     .fill(color.opacity(0.12))
@@ -227,6 +261,7 @@ extension HomeView {
         .frame(maxWidth: .infinity)
     }
     
+    
     var topDoctorsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             
@@ -242,26 +277,32 @@ extension HomeView {
         }
     }
     
+    
     var doctorCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             
             ZStack(alignment: .topLeading) {
-                //  image doctor
+                
                 if UIImage(named: "doctor_placeholder") != nil {
+                    
                     Image("doctor_placeholder")
                         .resizable()
                         .scaledToFill()
                         .frame(width: 220, height: 220)
                         .clipped()
                         .cornerRadius(24)
+                    
                 } else {
+                    
                     RoundedRectangle(cornerRadius: 24)
                         .fill(Color(#colorLiteral(red: 0.88, green: 0.94, blue: 0.98, alpha: 1)))
                         .frame(width: 220, height: 220)
                         .overlay(
                             Image(systemName: "person.fill")
                                 .font(.system(size: 60))
-                                .foregroundColor(Color(#colorLiteral(red: 0.36, green: 0.62, blue: 0.86, alpha: 1)))
+                                .foregroundColor(
+                                    Color(#colorLiteral(red: 0.36, green: 0.62, blue: 0.86, alpha: 1))
+                                )
                         )
                 }
                 
@@ -287,4 +328,6 @@ extension HomeView {
 
 #Preview {
     HomeView()
+        .environmentObject(AppRouter())
+        .environmentObject(AppointmentStore())
 }

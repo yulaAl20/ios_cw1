@@ -124,7 +124,7 @@ struct FloatingNavBarView: View {
     }
 }
 
-// MARK: - Preference Key
+//  Preference Key
 
 struct NavBarPreferenceKey: PreferenceKey {
     static var defaultValue: [Int: CGRect] = [:]

@@ -47,6 +47,11 @@ class SignUpViewModel: NSObject, ObservableObject {
         }
 
         isLoading = false
+        
+        // Persist user data for profile
+        UserDefaults.standard.set(callingName, forKey: "userName")
+        UserDefaults.standard.set("\(countryCode) \(phoneNumber)", forKey: "userPhoneNumber")
+        
         showingSuccessAlert = true
     }
 
