@@ -60,9 +60,9 @@ struct NewCustomerHomeView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 8)
                 
-                SearchBarView()
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 4)
+//                SearchBarView()
+//                    .padding(.horizontal, 20)
+//                    .padding(.bottom, 4)
             }
             .background(Color.white)
         }
