@@ -15,6 +15,7 @@ struct VerificationSuccessView: View {
     @State private var showFaceIDOverlay: Bool = false
     @State private var faceIDSuccess: Bool = false
     @State private var navigateToHome: Bool = false
+    @StateObject private var newUserRouter = AppRouter()
 
     var body: some View {
         ZStack {
@@ -116,7 +117,21 @@ struct VerificationSuccessView: View {
             }
         }
         .fullScreenCover(isPresented: $navigateToHome) {
-            NewCustomerHomeView()
+            Group {
+                switch newUserRouter.currentTab {
+                case 0:
+                    NewCustomerHomeView()
+                case 1:
+                    ServicesView()
+                case 2:
+                    AppointmentsView()
+                case 3:
+                    IndoorNavigationView()
+                default:
+                    NewCustomerHomeView()
+                }
+            }
+            .environmentObject(newUserRouter)
         }
     }
 

@@ -12,8 +12,7 @@ struct ProfileView: View {
     @AppStorage("isLoggedIn") private var isLoggedIn = true
     
     @AppStorage("userName") private var userName: String = ""
-    @AppStorage("userEmail") private var userEmail: String = ""
-    @AppStorage("userDOB") private var userDOB: TimeInterval = Date().timeIntervalSince1970
+    @AppStorage("userPhoneNumber") private var userPhone: String = ""
     
     let patientID = "#482931"
     
@@ -31,12 +30,10 @@ struct ProfileView: View {
                     .font(.headline)
                     .fontWeight(.semibold)
                 Spacer()
-                NavigationLink(destination: ProfileDetailsView()) {
-                    Text("Edit")
-                        .font(.body)
-                        .fontWeight(.medium)
-                        .foregroundColor(.blue)
-                }
+                // invisible spacer to balance the back button
+                Image(systemName: "chevron.left")
+                    .font(.title2)
+                    .foregroundColor(.clear)
             }
             .padding(.horizontal, 24)
             .padding(.top, 16)
@@ -57,30 +54,35 @@ struct ProfileView: View {
                     }
                     .padding(.top, 20)
                     
+                    // Name
                     Text(userName.isEmpty ? "Your Name" : userName)
                         .font(.title2)
                         .fontWeight(.semibold)
                     
+                    // Patient ID
                     Text("Patient ID: \(patientID)")
                         .font(.subheadline)
                         .foregroundColor(.gray)
                     
-                    if !userEmail.isEmpty {
-                        Text(userEmail)
-                            .font(.caption)
-                            .foregroundColor(.gray)
+                    // Phone number
+                    if !userPhone.isEmpty {
+                        HStack(spacing: 6) {
+                            Image(systemName: "phone.fill")
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                            Text(userPhone)
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
                     }
                     
                     // Menu items
                     VStack(spacing: 16) {
                         NavigationLink(destination: ProfileDetailsView()) {
-                            ProfileMenuItem(icon: "person.text.page", title: "Profile Details")
+                            ProfileMenuItem(icon: "pencil.line", title: "Edit Details")
                         }
-                        NavigationLink(destination: SettingsView()) {
-                            ProfileMenuItem(icon: "gear", title: "Settings")
-                        }
-                        NavigationLink(destination: NotificationsView()) {
-                            ProfileMenuItem(icon: "bell", title: "Notifications")
+                        NavigationLink(destination: AddPatientsView()) {
+                            ProfileMenuItem(icon: "person.2.fill", title: "Add Patients")
                         }
                     }
                     .padding(.top, 20)
@@ -90,6 +92,7 @@ struct ProfileView: View {
                 .padding(.horizontal, 24)
             }
             
+            // Sign Out button
             VStack {
                 Button(action: {
                     isLoggedIn = false

@@ -29,7 +29,7 @@ struct BookTestView: View {
                 
                 Text("Book a Test")
                     .font(.system(size: 20, weight: .semibold))
-                    .padding(.top)
+                  //  .padding(.top)
             }
             .padding(.horizontal)
             
