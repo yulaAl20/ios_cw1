@@ -10,7 +10,7 @@ import UIKit
 
 struct HomeView: View {
     
-    @State private var selectedTab: Int = 0
+    @EnvironmentObject var router: AppRouter
     @State private var animatePulse: Bool = false
     
     var body: some View {
@@ -69,7 +69,7 @@ struct HomeView: View {
                 VStack(spacing: 8) {
                     DirectionsBarView()
                         .padding(.horizontal, 16)
-                    FloatingNavBarView(selectedTab: $selectedTab)
+                    FloatingNavBarView(selectedTab: $router.currentTab)
                 }
             }
             .navigationBarHidden(true)
@@ -134,8 +134,7 @@ extension HomeView {
     
     var bookAppointmentCard: some View {
         VStack(spacing: 12) {
-            
-            Button(action: {}) {
+            NavigationLink(destination: ChooseDoctorView(selectedTab: $router.currentTab)) {
                 Text("Book Appointment")
                     .font(.headline)
                     .foregroundColor(.white)
@@ -146,9 +145,8 @@ extension HomeView {
                     )
                     .cornerRadius(20)
             }
-            .scaleEffect(animatePulse ? 1.02 : 1.0)
-            .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: animatePulse)
             
+
             Text("Find a doctor and schedule your visit instantly")
                 .font(.subheadline)
                 .foregroundColor(.gray)
@@ -292,4 +290,5 @@ extension HomeView {
 
 #Preview {
     HomeView()
+        .environmentObject(AppRouter())
 }

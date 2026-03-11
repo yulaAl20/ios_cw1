@@ -14,12 +14,15 @@ struct TodayVisitCard: View {
     }
 
     let type: CardType
+    var onCancel: (() -> Void)? = nil
+    var onReschedule: (() -> Void)? = nil
 
     var body: some View {
         switch type {
         case .upcoming(let doctor, let specialty, let location, let token, let timeSlot, let isTest):
             UpcomingCard(doctor: doctor, specialty: specialty, location: location,
-                         token: token, timeSlot: timeSlot, isTest: isTest)
+                         token: token, timeSlot: timeSlot, isTest: isTest,
+                         onCancel: onCancel, onReschedule: onReschedule)
         case .ongoing(let doctor, let specialty, let location, let token, let position, let isTest):
             OngoingCard(doctor: doctor, specialty: specialty, location: location,
                         token: token, position: position, isTest: isTest)
@@ -34,6 +37,8 @@ private struct UpcomingCard: View {
     let token: String
     let timeSlot: String
     let isTest: Bool
+    var onCancel: (() -> Void)? = nil
+    var onReschedule: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -91,7 +96,7 @@ private struct UpcomingCard: View {
                 .padding(.bottom, 12)
 
             HStack(spacing: 12) {
-                Button(action: {}) {
+                Button(action: { onCancel?() }) {
                     Text("Cancel")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(Color.red)
@@ -105,7 +110,7 @@ private struct UpcomingCard: View {
                         )
                 }
 
-                Button(action: {}) {
+                Button(action: { onReschedule?() }) {
                     Text("Reschedule")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(Color(red: 0.15, green: 0.35, blue: 0.75))

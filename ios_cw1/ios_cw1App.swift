@@ -11,6 +11,7 @@ import SwiftUI
 struct ios_cw1App: App {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @AppStorage("isLoggedIn") private var isLoggedIn = false
+    @AppStorage("isNewUser") private var isNewUser = false
     @StateObject private var appointmentStore = AppointmentStore()
     @StateObject private var router = AppRouter()
 
@@ -25,10 +26,10 @@ struct ios_cw1App: App {
                     Group {
                         switch router.currentTab {
                         case 0:
-                            if appointmentStore.currentAppointment != nil {
-                                HomeView()
-                            } else {
+                            if isNewUser {
                                 NewCustomerHomeView()
+                            } else {
+                                HomeView()
                             }
                         case 1:
                             ServicesView()

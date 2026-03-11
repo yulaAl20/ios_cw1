@@ -11,6 +11,7 @@ struct BookingPaymentConfirmationView: View {
     @Binding var isPresented: Bool
     @StateObject private var viewModel: PaymentViewModel
     @EnvironmentObject var appointmentStore: AppointmentStore
+    @EnvironmentObject var router: AppRouter
     
     let doctor: Doctor
     let selectedDate: Date
@@ -608,6 +609,10 @@ struct BookingPaymentConfirmationView: View {
             Button("Done") {
                 saveAppointment()
                 isPresented = false
+                // Switch to appointments tab after dismissal
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    router.currentTab = 2
+                }
             }
             .font(.system(size: 17, weight: .semibold))
             .foregroundColor(.white)
@@ -632,7 +637,7 @@ struct BookingPaymentConfirmationView: View {
                 queuePosition: nil,
                 date: selectedDate,
                 timeSlot: selectedTimeSlot,
-                status: .upcoming,
+                status: viewModel.selectedPaymentMethod == .counter ? .upcoming : .upcoming, // adjust as needed
                 isTest: false,
                 patientName: patientName.isEmpty ? "Yulani Alwis" : patientName,
                 patientPhone: patientPhone.isEmpty ? "0777777777" : patientPhone,
@@ -676,7 +681,6 @@ struct BookingPaymentConfirmationView: View {
     }
 }
 
-
 #Preview {
     BookingPaymentConfirmationView(
         doctor: MockData.doctors[0],
@@ -689,4 +693,5 @@ struct BookingPaymentConfirmationView: View {
         isPresented: .constant(true)
     )
     .environmentObject(AppointmentStore())
+    .environmentObject(AppRouter())
 }

@@ -8,8 +8,10 @@
 import SwiftUI
 
 struct BookAppointmentButton: View {
+    @Binding var showBookingFlow: Bool
+
     var body: some View {
-        NavigationLink(destination: Text("Book New Appointment Screen")) {
+        Button(action: { showBookingFlow = true }) {
             HStack(spacing: 8) {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 18))
@@ -36,6 +38,6 @@ struct BookAppointmentButton: View {
 }
 
 #Preview {
-    BookAppointmentButton()
+    BookAppointmentButton(showBookingFlow: .constant(false))
         .padding()
 }

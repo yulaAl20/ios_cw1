@@ -8,11 +8,12 @@ struct NewCustomerHomeView: View {
     
     @EnvironmentObject var router: AppRouter
     @State private var animatePulse: Bool = false
+    @State private var showBookingFlow = false   // Add this
     
     var body: some View {
         ZStack(alignment: .top) {
             
-            //  Background
+            // Background
             VStack(spacing: 0) {
                 
                 Color(.systemGroupedBackground)
@@ -57,12 +58,8 @@ struct NewCustomerHomeView: View {
                 HeaderView(
                     title: "ClinicFlow"
                 )
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 8)
-                
-//                SearchBarView()
-//                    .padding(.horizontal, 20)
-//                    .padding(.bottom, 4)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 8)
             }
             .background(Color.white)
         }
@@ -74,6 +71,13 @@ struct NewCustomerHomeView: View {
             }
         }
         .onAppear { animatePulse = true }
+        .fullScreenCover(isPresented: $showBookingFlow) {
+            NavigationStack {
+                ChooseDoctorView(selectedTab: $router.currentTab, onFlowComplete: {
+                    showBookingFlow = false
+                })
+            }
+        }
     }
 }
 
@@ -124,7 +128,7 @@ extension NewCustomerHomeView {
         VStack(spacing: 12) {
 
             Button(action: {
-          //      showBookingFlow = true
+                showBookingFlow = true
             }) {
                 Text("Book Appointment")
                     .font(.headline)
@@ -140,7 +144,7 @@ extension NewCustomerHomeView {
                     )
                     .cornerRadius(20)
             }
-          //  .scaleEffect(animatePulse ? 1.02 : 1.0)
+            .scaleEffect(animatePulse ? 1.02 : 1.0)
             .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: animatePulse)
             
             Text("Find a doctor and schedule your visit instantly")

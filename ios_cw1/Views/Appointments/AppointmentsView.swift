@@ -10,9 +10,15 @@ import SwiftUI
 struct AppointmentsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var appointmentStore: AppointmentStore
+    @EnvironmentObject var router: AppRouter
     var selectedTabBinding: Binding<Int>?
 
     @State private var selectedTab = "Upcoming"
+    @State private var showBookingFlow = false
+    @State private var showCancelAlert = false
+    @State private var appointmentToCancel: Appointment? = nil
+    @State private var appointmentToReschedule: Appointment? = nil
+    @State private var showReschedule = false
 
     private var currentAppointments: [Appointment] {
         switch selectedTab {
@@ -35,114 +41,179 @@ struct AppointmentsView: View {
         currentAppointments
     }
 
+    private func doctorForAppointment(_ appointment: Appointment) -> Doctor {
+        let name = appointment.doctorName.replacingOccurrences(of: "Dr. ", with: "")
+        if let doctor = MockData.doctors.first(where: { $0.fullName == name }) {
+            return doctor
+        }
+        let parts = name.split(separator: " ", maxSplits: 1)
+        return Doctor(
+            firstName: String(parts.first ?? ""),
+            lastName: String(parts.last ?? ""),
+            degree: "MD",
+            specialty: appointment.specialty,
+            rating: 0,
+            imageName: nil,
+            availableTime: "",
+            specialtyType: .general,
+            experience: "",
+            patients: "",
+            reviews: "",
+            fee: appointment.totalAmount,
+            timeSlots: [],
+            bio: "",
+            availability: ""
+        )
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Button(action: {
-                    if let binding = selectedTabBinding {
-                        binding.wrappedValue = 0
-                    } else {
-                        dismiss()
-                    }
-                }) {
-                    Image(systemName: "chevron.left")
-                        .font(.title2)
+        NavigationStack {
+            VStack(spacing: 0) {
+               
+                HStack {
+                    Text("Appointments")
+                        .font(.system(size: 24, weight: .bold))
                         .foregroundColor(.primary)
-                }
-                Spacer()
-                Text("Appointments")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                Spacer()
-                Color.clear.frame(width: 44, height: 44)
-            }
-            .padding(.horizontal, 24)
-            .padding(.top, 16)
-            .padding(.bottom, 8)
-
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 18) {
-
-                    AppointmentSegmentedControl(selectedTab: $selectedTab)
-
-                    BookAppointmentButton()
-
-                    if selectedTab == "Upcoming" {
-                        if !todayVisits.isEmpty {
-                            AppointmentSectionHeader(title: "Today's Visits")
-                            ForEach(todayVisits) { visit in
-                                TodayVisitCard(type: .upcoming(
-                                    doctor: visit.doctorName,
-                                    specialty: visit.specialty,
-                                    location: visit.location,
-                                    token: visit.token ?? "",
-                                    timeSlot: visit.timeSlot,
-                                    isTest: visit.isTest
-                                ))
-                            }
-                        }
-
-                        if !futureVisits.isEmpty {
-                            AppointmentSectionHeader(title: "Upcoming Visits")
-                            ForEach(futureVisits) { visit in
-                                TodayVisitCard(type: .upcoming(
-                                    doctor: visit.doctorName,
-                                    specialty: visit.specialty,
-                                    location: visit.location,
-                                    token: visit.token ?? "",
-                                    timeSlot: visit.timeSlot,
-                                    isTest: visit.isTest
-                                ))
-                            }
-                        }
-
-                        if todayVisits.isEmpty && futureVisits.isEmpty {
-                            AppointmentEmptyState(icon: "calendar.badge.clock", message: "No upcoming appointments")
-                        }
-
-                    } else if selectedTab == "Ongoing" {
-                        if !todayVisits.isEmpty {
-                            AppointmentSectionHeader(title: "Today's Visits")
-                            ForEach(todayVisits) { visit in
-                                if let position = visit.queuePosition {
-                                    TodayVisitCard(type: .ongoing(
-                                        doctor: visit.doctorName,
-                                        specialty: visit.specialty,
-                                        location: visit.location,
-                                        token: visit.token ?? "",
-                                        position: position,
-                                        isTest: visit.isTest
-                                    ))
-                                }
-                            }
-                        } else {
-                            AppointmentEmptyState(icon: "clock.fill", message: "No ongoing appointments")
-                        }
-
-                    } else if selectedTab == "Completed" {
-                        if !pastVisits.isEmpty {
-                            AppointmentSectionHeader(title: "Past Visits")
-                            ForEach(pastVisits) { visit in
-                                PastVisitCard(
-                                    title: visit.doctorName,
-                                    subtitle: visit.specialty,
-                                    date: visit.formattedDate,
-                                    isTest: visit.isTest
-                                )
-                            }
-                        } else {
-                            AppointmentEmptyState(icon: "checkmark.circle.fill", message: "No completed appointments")
-                        }
-                    }
-
-                    Spacer(minLength: 40)
+                    Spacer()
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 8)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
+
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 18) {
+
+                        AppointmentSegmentedControl(selectedTab: $selectedTab)
+
+                        BookAppointmentButton(showBookingFlow: $showBookingFlow)
+                            .fullScreenCover(isPresented: $showBookingFlow) {
+                                NavigationStack {
+                                    ChooseDoctorView(selectedTab: $router.currentTab, onFlowComplete: {
+                                        showBookingFlow = false
+                                    })
+                                }
+                            }
+
+                        if selectedTab == "Upcoming" {
+                            if !todayVisits.isEmpty {
+                                AppointmentSectionHeader(title: "Today's Visits")
+                                ForEach(todayVisits) { visit in
+                                    TodayVisitCard(
+                                        type: .upcoming(
+                                            doctor: visit.doctorName,
+                                            specialty: visit.specialty,
+                                            location: visit.location,
+                                            token: visit.token ?? "",
+                                            timeSlot: visit.timeSlot,
+                                            isTest: visit.isTest
+                                        ),
+                                        onCancel: {
+                                            appointmentToCancel = visit
+                                            showCancelAlert = true
+                                        },
+                                        onReschedule: {
+                                            appointmentToReschedule = visit
+                                            showReschedule = true
+                                        }
+                                    )
+                                }
+                            }
+
+                            if !futureVisits.isEmpty {
+                                AppointmentSectionHeader(title: "Upcoming Visits")
+                                ForEach(futureVisits) { visit in
+                                    TodayVisitCard(
+                                        type: .upcoming(
+                                            doctor: visit.doctorName,
+                                            specialty: visit.specialty,
+                                            location: visit.location,
+                                            token: visit.token ?? "",
+                                            timeSlot: visit.timeSlot,
+                                            isTest: visit.isTest
+                                        ),
+                                        onCancel: {
+                                            appointmentToCancel = visit
+                                            showCancelAlert = true
+                                        },
+                                        onReschedule: {
+                                            appointmentToReschedule = visit
+                                            showReschedule = true
+                                        }
+                                    )
+                                }
+                            }
+
+                            if todayVisits.isEmpty && futureVisits.isEmpty {
+                                AppointmentEmptyState(icon: "calendar.badge.clock", message: "No upcoming appointments")
+                            }
+
+                        } else if selectedTab == "Ongoing" {
+                            if !todayVisits.isEmpty {
+                                AppointmentSectionHeader(title: "Today's Visits")
+                                ForEach(todayVisits) { visit in
+                                    if let position = visit.queuePosition {
+                                        TodayVisitCard(type: .ongoing(
+                                            doctor: visit.doctorName,
+                                            specialty: visit.specialty,
+                                            location: visit.location,
+                                            token: visit.token ?? "",
+                                            position: position,
+                                            isTest: visit.isTest
+                                        ))
+                                    }
+                                }
+                            } else {
+                                AppointmentEmptyState(icon: "clock.fill", message: "No ongoing appointments")
+                            }
+
+                        } else if selectedTab == "Completed" {
+                            if !pastVisits.isEmpty {
+                                AppointmentSectionHeader(title: "Past Visits")
+                                ForEach(pastVisits) { visit in
+                                    PastVisitCard(
+                                        title: visit.doctorName,
+                                        subtitle: visit.specialty,
+                                        date: visit.formattedDate,
+                                        isTest: visit.isTest
+                                    )
+                                }
+                            } else {
+                                AppointmentEmptyState(icon: "checkmark.circle.fill", message: "No completed appointments")
+                            }
+                        }
+
+                        Spacer(minLength: 120)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                }
+            }
+            .navigationBarHidden(true)
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            .alert("Confirm Cancellation", isPresented: $showCancelAlert) {
+                Button("No", role: .cancel) {
+                    appointmentToCancel = nil
+                }
+                Button("Confirm", role: .destructive) {
+                    if let appointment = appointmentToCancel {
+                        withAnimation {
+                            appointmentStore.removeAppointment(appointment.id)
+                        }
+                        appointmentToCancel = nil
+                    }
+                }
+            } message: {
+                Text("Are you sure you want to cancel this appointment?")
+            }
+            .navigationDestination(isPresented: $showReschedule) {
+                if let appointment = appointmentToReschedule {
+                    BookingTimeView(doctor: doctorForAppointment(appointment))
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                FloatingNavBarView(selectedTab: $router.currentTab)
             }
         }
-        .navigationBarHidden(true)
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
     }
 }
 
@@ -219,8 +290,7 @@ struct AppointmentEmptyState: View {
             totalAmount: 1800
         )
     ]
-    return NavigationStack {
-        AppointmentsView()
+    return AppointmentsView()
             .environmentObject(sampleStore)
-    }
+            .environmentObject(AppRouter())
 }

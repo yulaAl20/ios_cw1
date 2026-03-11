@@ -11,18 +11,26 @@ struct HeaderView: View {
     
     var title: String? = nil
     var searchPlaceholder: String = "Search"
+    @State private var showProfile = false
     
     var body: some View {
         VStack(spacing: 10) {
             // Title row (profile icon, title text, bell icon)
             HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(Color.white.opacity(0.25))
-                        .frame(width: 44, height: 44)
-                    Image(systemName: "person.circle")
-                        .font(.system(size: 24))
-                        .foregroundColor(.black.opacity(0.6))
+                Button(action: { showProfile = true }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.25))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: "person.circle")
+                            .font(.system(size: 24))
+                            .foregroundColor(.black.opacity(0.6))
+                    }
+                }
+                .sheet(isPresented: $showProfile) {
+                    NavigationStack {
+                        ProfileView()
+                    }
                 }
                 Spacer()
                 if let title = title {

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct LoginView: View {
+    @AppStorage("isLoggedIn") private var isLoggedIn = false
     @StateObject private var viewModel = LoginViewModel()
     @State private var selectedCountryCode = "+94"
     @State private var showHomeView = false
@@ -269,9 +270,10 @@ struct LoginView: View {
             SignUpView()
         }
         .sheet(isPresented: $showOTP) {
-            OTPVerificationView(phoneNumber: otpPhoneNumber) {
-                // On successful verification, navigate to Home
-                showHomeView = true
+            OTPVerificationView(phoneNumber: otpPhoneNumber, isLogin: true) {
+                // Existing user login: set isLoggedIn to go directly to HomeView
+                showOTP = false
+                isLoggedIn = true
             }
         }
         

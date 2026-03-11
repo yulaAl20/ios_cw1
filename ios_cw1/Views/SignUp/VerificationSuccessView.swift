@@ -14,6 +14,8 @@ struct VerificationSuccessView: View {
     @State private var agreeToTerms: Bool = false
     @State private var showFaceIDOverlay: Bool = false
     @State private var faceIDSuccess: Bool = false
+    @AppStorage("isLoggedIn") private var isLoggedIn = false
+    @AppStorage("isNewUser") private var isNewUser = false
     @State private var navigateToHome: Bool = false
     @StateObject private var newUserRouter = AppRouter()
 
@@ -116,22 +118,11 @@ struct VerificationSuccessView: View {
                 FaceIDOverlayView(isSuccess: $faceIDSuccess)
             }
         }
-        .fullScreenCover(isPresented: $navigateToHome) {
-            Group {
-                switch newUserRouter.currentTab {
-                case 0:
-                    NewCustomerHomeView()
-                case 1:
-                    ServicesView()
-                case 2:
-                    AppointmentsView()
-                case 3:
-                    IndoorNavigationView()
-                default:
-                    NewCustomerHomeView()
-                }
+        .onChange(of: navigateToHome) { _, newValue in
+            if newValue {
+                isNewUser = true
+                isLoggedIn = true
             }
-            .environmentObject(newUserRouter)
         }
     }
 

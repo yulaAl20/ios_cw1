@@ -10,6 +10,7 @@ import Combine
 
 struct OTPVerificationView: View {
     let phoneNumber: String
+    let isLogin: Bool
     var onVerified: (() -> Void)?
 
     @StateObject private var vm: OTPViewModel
@@ -18,8 +19,9 @@ struct OTPVerificationView: View {
     @State private var showSuccess = false
     @State private var otpText = ""
 
-    init(phoneNumber: String, onVerified: (() -> Void)? = nil) {
+    init(phoneNumber: String, isLogin: Bool = false, onVerified: (() -> Void)? = nil) {
         self.phoneNumber = phoneNumber
+        self.isLogin = isLogin
         self.onVerified = onVerified
         _vm = StateObject(wrappedValue: OTPViewModel(phoneNumber: phoneNumber))
     }
@@ -107,8 +109,14 @@ struct OTPVerificationView: View {
                     if limited.count == 4 {
                         vm.verify { success in
                             if success {
-                                showSuccess = true
-                                onVerified?()
+                                if isLogin {
+                                    // Existing user: skip VerificationSuccessView, go straight to HomeView
+                                    onVerified?()
+                                } else {
+                                    // New user: show VerificationSuccessView
+                                    showSuccess = true
+                                    onVerified?()
+                                }
                             } else {
                                 // Clear input on wrong OTP
                                 otpText = ""
@@ -182,8 +190,12 @@ struct OTPVerificationView: View {
         Button(action: {
             vm.verify { success in
                 if success {
-                    showSuccess = true
-                    onVerified?()
+                    if isLogin {
+                        onVerified?()
+                    } else {
+                        showSuccess = true
+                        onVerified?()
+                    }
                 }
             }
         }) {

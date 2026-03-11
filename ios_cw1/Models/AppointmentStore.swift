@@ -69,4 +69,8 @@ class AppointmentStore: ObservableObject {
             totalAmount: appointment.totalAmount
         )
     }
+    
+    func removeAppointment(_ id: UUID) {
+        appointments.removeAll { $0.id == id }
+    }
 }
