@@ -624,16 +624,22 @@ struct BookingPaymentConfirmationView: View {
     // MARK: - Save Appointment
     
     private func saveAppointment() {
-        let appointment = AppointmentDetails(
-            doctorName: doctor.fullName,
-            specialty: doctor.specialty,
-            dateTime: formattedDateTime,
-            location: location,
-            patientName: patientName.isEmpty ? "Yulani Alwis" : patientName,
-            patientPhone: patientPhone.isEmpty ? "0777777777" : patientPhone,
-            totalAmount: viewModel.totalAmount
-        )
-        appointmentStore.currentAppointment = appointment
+        let newAppointment = Appointment(
+                doctorName: doctor.fullName,
+                specialty: doctor.specialty,
+                location: location,
+                token: "\(Int.random(in: 10...99))", // generate a random token
+                queuePosition: nil,
+                date: selectedDate,
+                timeSlot: selectedTimeSlot,
+                status: .upcoming,
+                isTest: false,
+                patientName: patientName.isEmpty ? "Yulani Alwis" : patientName,
+                patientPhone: patientPhone.isEmpty ? "0777777777" : patientPhone,
+                totalAmount: viewModel.totalAmount
+            )
+            
+            appointmentStore.addAppointment(newAppointment)
     }
     
     // MARK: - Share Text
