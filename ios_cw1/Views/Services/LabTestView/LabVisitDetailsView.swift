@@ -282,29 +282,27 @@ extension LabVisitDetailsView {
 // Patient Details Section
 
 extension LabVisitDetailsView {
-    
+
     var patientDetailsSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Patient Details")
                 .font(.system(size: 16, weight: .semibold))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
-            
+
             Divider()
                 .padding(.leading, 16)
-            
+
+            // Patient picker row
             Button(action: { showPatientPicker = true }) {
                 HStack {
                     Text("Patient")
                         .font(.system(size: 15))
                         .foregroundColor(.black)
-                    
                     Spacer()
-                    
                     Text(viewModel.selectedPatient)
                         .font(.system(size: 15))
                         .foregroundColor(.blue)
-                    
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.gray)
@@ -312,10 +310,92 @@ extension LabVisitDetailsView {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
             }
+
+            // Show saved profile fields only when "Self" is selected
+            if viewModel.isSelfSelected {
+                savedUserInfoRows
+            }
         }
         .background(Color.white)
         .cornerRadius(12)
         .padding(.horizontal, 20)
+    }
+
+    @ViewBuilder
+    var savedUserInfoRows: some View {
+        let hasInfo = !viewModel.savedUserName.isEmpty || !viewModel.savedUserPhone.isEmpty
+
+        if hasInfo {
+            Divider().padding(.leading, 16)
+
+            VStack(spacing: 0) {
+                if !viewModel.savedUserName.isEmpty {
+                    patientInfoRow(
+                        icon: "person.fill",
+                        label: "Full Name",
+                        value: viewModel.savedUserName
+                    )
+                    if !viewModel.savedUserPhone.isEmpty {
+                        Divider().padding(.leading, 52)
+                    }
+                }
+
+                if !viewModel.savedUserPhone.isEmpty {
+                    patientInfoRow(
+                        icon: "phone.fill",
+                        label: "Phone",
+                        value: viewModel.savedUserPhone
+                    )
+                }
+            }
+
+            HStack(spacing: 6) {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 12))
+                    .foregroundColor(.blue)
+                Text("Update your info in Profile → Edit Details")
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 12)
+
+        } else {
+            Divider().padding(.leading, 16)
+            HStack(spacing: 10) {
+                Image(systemName: "exclamationmark.circle")
+                    .font(.system(size: 16))
+                    .foregroundColor(.orange)
+                Text("No profile information saved. Go to Profile → Edit Details to add your details.")
+                    .font(.system(size: 13))
+                    .foregroundColor(.gray)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+        }
+    }
+
+    func patientInfoRow(icon: String, label: String, value: String) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(Color.blue.opacity(0.1))
+                    .frame(width: 32, height: 32)
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundColor(Color(red: 0.15, green: 0.35, blue: 0.75))
+            }
+            Text(label)
+                .font(.system(size: 15))
+                .foregroundColor(.gray)
+            Spacer()
+            Text(value)
+                .font(.system(size: 15))
+                .foregroundColor(.black)
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 }
 

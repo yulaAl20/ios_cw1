@@ -336,6 +336,7 @@ extension PharmacyCartView {
                 if viewModel.hasPrescription {
                     Button(action: {
                         _ = viewModel.submitPrescriptionOrder()
+                        dismiss()
                     }) {
                         HStack {
                             Text(viewModel.cartItems.isEmpty ? "Submit Prescription" : "Submit Order")

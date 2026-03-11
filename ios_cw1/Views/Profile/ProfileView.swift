@@ -9,15 +9,14 @@ import SwiftUI
 
 struct ProfileView: View {
     @Environment(\.dismiss) var dismiss
-    @AppStorage("isLoggedIn") private var isLoggedIn = true
-    
-    // Hardcoded user info
-    let userName: String = "Yulani Alwis"
-    let userPhone: String = "07777777777"
-    
+    @AppStorage("isLoggedIn")      private var isLoggedIn = true
+    @AppStorage("userName")        private var userName: String = ""
+    @AppStorage("userPhoneNumber") private var userPhone: String = ""
+
+    let patientID = "#482931"
+
     var body: some View {
         VStack(spacing: 0) {
-            // Top bar
             HStack {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.left")
@@ -29,7 +28,6 @@ struct ProfileView: View {
                     .font(.headline)
                     .fontWeight(.semibold)
                 Spacer()
-                // invisible spacer to balance the back button
                 Image(systemName: "chevron.left")
                     .font(.title2)
                     .foregroundColor(.clear)
@@ -37,10 +35,9 @@ struct ProfileView: View {
             .padding(.horizontal, 24)
             .padding(.top, 16)
             .padding(.bottom, 8)
-            
+
             ScrollView {
                 VStack(spacing: 24) {
-                    // Avatar
                     ZStack {
                         Circle()
                             .fill(Color.blue.opacity(0.15))
@@ -52,23 +49,26 @@ struct ProfileView: View {
                             .foregroundColor(.blue)
                     }
                     .padding(.top, 20)
-                    
-                    // Name
-                    Text(userName)
+
+                    Text(userName.isEmpty ? "Your Name" : userName)
                         .font(.title2)
                         .fontWeight(.semibold)
 
-                    // Phone number
-                    HStack(spacing: 6) {
-                        Image(systemName: "phone.fill")
-                            .font(.caption)
-                            .foregroundColor(.blue)
-                        Text(userPhone)
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
+                    Text("Patient ID: \(patientID)")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+
+                    if !userPhone.isEmpty {
+                        HStack(spacing: 6) {
+                            Image(systemName: "phone.fill")
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                            Text(userPhone)
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
                     }
-                    
-                    // Menu items
+
                     VStack(spacing: 16) {
                         NavigationLink(destination: ProfileDetailsView()) {
                             ProfileMenuItem(icon: "pencil.line", title: "Edit Details")
@@ -76,19 +76,19 @@ struct ProfileView: View {
                         NavigationLink(destination: AddPatientsView()) {
                             ProfileMenuItem(icon: "person.2.fill", title: "Add Patients")
                         }
+                        NavigationLink(destination: PaymentMethodsView()) {
+                            ProfileMenuItem(icon: "creditcard.fill", title: "Payment Methods")
+                        }
                     }
                     .padding(.top, 20)
-                    
+
                     Spacer(minLength: 40)
                 }
                 .padding(.horizontal, 24)
             }
-            
-            // Sign Out button
+
             VStack {
-                Button(action: {
-                    isLoggedIn = false
-                }) {
+                Button(action: { isLoggedIn = false }) {
                     Text("Sign Out")
                         .font(.headline)
                         .foregroundColor(.red)
@@ -110,7 +110,7 @@ struct ProfileView: View {
 struct ProfileMenuItem: View {
     let icon: String
     let title: String
-    
+
     var body: some View {
         HStack {
             Image(systemName: icon)

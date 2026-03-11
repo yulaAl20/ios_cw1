@@ -11,89 +11,88 @@ import SwiftUI
 import CoreImage.CIFilterBuiltins
 
 class PaymentViewModel: ObservableObject {
-    
-    // Payment Details
+
+    // MARK: - Payment Info
     let totalPrice: Double
-    
-    // Payment State
+
+    // MARK: - Payment State
     @Published var selectedPaymentMethod: PaymentMethod = .card
-    @Published var isProcessing: Bool = false
+    @Published var isProcessing: Bool   = false
     @Published var paymentSuccess: Bool = false
-    
-    // Card Management
-    @Published var savedCards: [SavedCard] = []
+
+    // MARK: - Card Management
+    @Published var savedCards: [SavedCard]  = []
     @Published var selectedCard: SavedCard? = nil
-    
-    // Sheet States
-    @Published var showAddCardSheet: Bool = false
-    @Published var showApplePayPrompt: Bool = false
-    
-    // Computed Properties
-    var labVisitFee: Double { 0.0 }
-    var discount: Double { 0.0 }
-    var totalAmount: Double { totalPrice + labVisitFee - discount }
-    
-    // Generate unique receipt number
+
+    // MARK: - Sheet States
+    @Published var showAddCardSheet:    Bool = false
+    @Published var showApplePayPrompt:  Bool = false
+
+    // MARK: - Computed
+    var labVisitFee: Double  { 0.0 }
+    var discount: Double     { 0.0 }
+    var totalAmount: Double  { totalPrice + labVisitFee - discount }
+
     let receiptNumber: String
-    
+
     var canProceed: Bool {
         switch selectedPaymentMethod {
-        case .applePay:
-            return true
-        case .card:
-            return !savedCards.isEmpty && selectedCard != nil
-        case .counter:
-            return true
+        case .applePay: return true
+        case .card:     return !savedCards.isEmpty && selectedCard != nil
+        case .counter:  return true
         }
     }
-    
-    // Initializer
+
+    // MARK: - Init
+
     init(totalPrice: Double) {
         self.totalPrice = totalPrice
-        let prefix = "RCP"
-        let timestamp = Int(Date().timeIntervalSince1970) % 1000000
-        let random = Int.random(in: 100...999)
+        let prefix    = "RCP"
+        let timestamp = Int(Date().timeIntervalSince1970) % 1_000_000
+        let random    = Int.random(in: 100...999)
         self.receiptNumber = "\(prefix)-\(timestamp)-\(random)"
+
+        // Pre-populate from the shared persistent card store
+        let stored = CardStore.shared.savedCards
+        self.savedCards  = stored
+        self.selectedCard = stored.first
     }
-    
-    //  Actions
-    
+
+    // MARK: - Actions
+
     func handlePayment() {
         switch selectedPaymentMethod {
-        case .applePay:
-            showApplePayPrompt = true
-        case .card:
-            processPayment()
-        case .counter:
-            processPayment()
+        case .applePay: showApplePayPrompt = true
+        case .card, .counter: processPayment()
         }
     }
-    
+
     func processPayment() {
         isProcessing = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
             self?.isProcessing = false
-            withAnimation {
-                self?.paymentSuccess = true
-            }
+            withAnimation { self?.paymentSuccess = true }
         }
     }
-    
+
+    /// Called by AddCardSheet callback.  When saveForFuture is true the card is
+    /// persisted globally via CardStore so it appears in every payment flow and
+    /// the Profile page.
     func addCard(_ card: SavedCard, saveForFuture: Bool) {
         if saveForFuture {
+            CardStore.shared.addCard(card)
+        }
+        if !savedCards.contains(where: { $0.id == card.id }) {
             savedCards.append(card)
         }
         selectedCard = card
     }
-    
-    //  QR Code Generation
-    
+
+    // MARK: - QR Code Generation
+
     func generatePaymentQRCode() -> UIImage? {
-        // Guard against preview environment where CoreImage can crash
-        guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" else {
-            return nil
-        }
-        
+        guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" else { return nil }
+
         let qrData = """
         {
             "type": "lab_payment",
@@ -104,17 +103,15 @@ class PaymentViewModel: ObservableObject {
             "timestamp": "\(ISO8601DateFormatter().string(from: Date()))"
         }
         """
-        
+
         let context = CIContext()
-        let filter = CIFilter.qrCodeGenerator()
-        filter.message = Data(qrData.utf8)
-        filter.correctionLevel = "M"
-        
+        let filter  = CIFilter.qrCodeGenerator()
+        filter.message          = Data(qrData.utf8)
+        filter.correctionLevel  = "M"
+
         if let outputImage = filter.outputImage {
-            let transform = CGAffineTransform(scaleX: 10, y: 10)
-            let scaledImage = outputImage.transformed(by: transform)
-            
-            if let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) {
+            let scaled = outputImage.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
+            if let cgImage = context.createCGImage(scaled, from: scaled.extent) {
                 return UIImage(cgImage: cgImage)
             }
         }

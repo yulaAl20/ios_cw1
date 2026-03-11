@@ -9,13 +9,32 @@ import Foundation
 
 enum PaymentMethod: String, CaseIterable {
     case applePay = "Apple Pay"
-    case card = "Credit/Debit Card"
-    case counter = "Pay at Counter"
+    case card     = "Credit/Debit Card"
+    case counter  = "Pay at Counter"
 }
 
-struct SavedCard: Identifiable {
-    let id = UUID()
+struct SavedCard: Identifiable, Codable, Equatable {
+    let id: UUID
     let lastFourDigits: String
-    let cardType: String // Visa, Mastercard, etc.
+    let cardType: String
     let expiryDate: String
+    let cardholderName: String
+
+    init(
+        id: UUID = UUID(),
+        lastFourDigits: String,
+        cardType: String,
+        expiryDate: String,
+        cardholderName: String = ""
+    ) {
+        self.id             = id
+        self.lastFourDigits = lastFourDigits
+        self.cardType       = cardType
+        self.expiryDate     = expiryDate
+        self.cardholderName = cardholderName
+    }
+
+    var displayName: String {
+        cardholderName.isEmpty ? "•••• \(lastFourDigits)" : cardholderName
+    }
 }
