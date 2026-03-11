@@ -631,14 +631,16 @@ struct PayAtCounterSuccessView: View {
                         specialty: "Lab",
                         location: labLocation,
                         token: String(format: "%02d", Int.random(in: 1...99)),
-                        queuePosition: nil,
+                        queuePosition: Int.random(in: 2...10),
+                        totalInQueue: Int.random(in: 10...20),
                         date: selectedDate,
                         timeSlot: selectedTimeSlot,
                         status: .upcoming,
                         isTest: true,
                         patientName: patientName,
                         patientPhone: "",
-                        totalAmount: viewModel.totalAmount
+                        totalAmount: viewModel.totalAmount,
+                        flowStage: .inQueue
                     )
                     appointmentStore.addAppointment(appointment)
                     router.appointmentsInitialTab = "Upcoming"
@@ -872,14 +874,16 @@ struct RegularPaymentSuccessView: View {
                         specialty: "Lab",
                         location: labLocation,
                         token: String(format: "%02d", Int.random(in: 1...99)),
-                        queuePosition: nil,
+                        queuePosition: Int.random(in: 2...10),
+                        totalInQueue: Int.random(in: 10...20),
                         date: selectedDate,
                         timeSlot: selectedTimeSlot,
                         status: .upcoming,
                         isTest: true,
                         patientName: patientName,
                         patientPhone: "",
-                        totalAmount: viewModel.totalAmount
+                        totalAmount: viewModel.totalAmount,
+                        flowStage: .inQueue
                     )
                     appointmentStore.addAppointment(appointment)
                     router.appointmentsInitialTab = "Upcoming"

@@ -11,6 +11,7 @@ struct AppointmentsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var appointmentStore: AppointmentStore
     @EnvironmentObject var router: AppRouter
+    @EnvironmentObject var flowViewModel: AppointmentFlowViewModel
     var selectedTabBinding: Binding<Int>?
 
     @State private var selectedTab = "Upcoming"
@@ -30,7 +31,6 @@ struct AppointmentsView: View {
         }
     }
 
-    // Doctor visits
     private var todayDoctorVisits: [Appointment] {
         currentAppointments.filter { Calendar.current.isDateInToday($0.date) && !$0.isTest }
     }
@@ -40,8 +40,6 @@ struct AppointmentsView: View {
     private var pastDoctorVisits: [Appointment] {
         currentAppointments.filter { !$0.isTest }
     }
-
-    // Test / Lab appointments
     private var todayLabVisits: [Appointment] {
         currentAppointments.filter { Calendar.current.isDateInToday($0.date) && $0.isTest }
     }
@@ -61,9 +59,7 @@ struct AppointmentsView: View {
 
     private func doctorForAppointment(_ appointment: Appointment) -> Doctor {
         let name = appointment.doctorName.replacingOccurrences(of: "Dr. ", with: "")
-        if let doctor = MockData.doctors.first(where: { $0.fullName == name }) {
-            return doctor
-        }
+        if let doctor = MockData.doctors.first(where: { $0.fullName == name }) { return doctor }
         let parts = name.split(separator: " ", maxSplits: 1)
         return Doctor(
             firstName: String(parts.first ?? ""),
@@ -101,11 +97,7 @@ struct AppointmentsView: View {
             },
             onReschedule: {
                 appointmentToReschedule = visit
-                if visit.isTest {
-                    showLabReschedule = true
-                } else {
-                    showReschedule = true
-                }
+                if visit.isTest { showLabReschedule = true } else { showReschedule = true }
             }
         )
     }
@@ -113,7 +105,7 @@ struct AppointmentsView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-               
+
                 HStack {
                     Text("Appointments")
                         .font(.system(size: 24, weight: .bold))
@@ -139,109 +131,48 @@ struct AppointmentsView: View {
                             }
 
                         if selectedTab == "Upcoming" {
-                            // — Doctor Visits —
                             if hasDoctorAppointments {
                                 AppointmentSectionHeader(title: "Doctor Visits")
                             }
                             if !todayDoctorVisits.isEmpty {
                                 AppointmentSubheader(title: "Today")
-                                ForEach(todayDoctorVisits) { visit in
-                                    upcomingCard(for: visit)
-                                }
+                                ForEach(todayDoctorVisits) { visit in upcomingCard(for: visit) }
                             }
                             if !futureDoctorVisits.isEmpty {
                                 AppointmentSubheader(title: "Upcoming")
-                                ForEach(futureDoctorVisits) { visit in
-                                    upcomingCard(for: visit)
-                                }
+                                ForEach(futureDoctorVisits) { visit in upcomingCard(for: visit) }
                             }
-
-                            // — Test / Lab Appointments —
                             if hasLabAppointments {
                                 AppointmentSectionHeader(title: "Test / Lab Appointments")
                             }
                             if !todayLabVisits.isEmpty {
                                 AppointmentSubheader(title: "Today")
-                                ForEach(todayLabVisits) { visit in
-                                    upcomingCard(for: visit)
-                                }
+                                ForEach(todayLabVisits) { visit in upcomingCard(for: visit) }
                             }
                             if !futureLabVisits.isEmpty {
                                 AppointmentSubheader(title: "Upcoming")
-                                ForEach(futureLabVisits) { visit in
-                                    upcomingCard(for: visit)
-                                }
+                                ForEach(futureLabVisits) { visit in upcomingCard(for: visit) }
                             }
-
                             if !hasDoctorAppointments && !hasLabAppointments {
                                 AppointmentEmptyState(icon: "calendar.badge.clock", message: "No upcoming appointments")
                             }
 
                         } else if selectedTab == "Ongoing" {
-                            let ongoingDoctors = currentAppointments.filter { !$0.isTest }
-                            let ongoingLabs = currentAppointments.filter { $0.isTest }
-
-                            if !ongoingDoctors.isEmpty {
-                                AppointmentSectionHeader(title: "Doctor Visits")
-                                ForEach(ongoingDoctors) { visit in
-                                    if let position = visit.queuePosition {
-                                        TodayVisitCard(type: .ongoing(
-                                            doctor: visit.doctorName,
-                                            specialty: visit.specialty,
-                                            location: visit.location,
-                                            token: visit.token ?? "",
-                                            position: position,
-                                            isTest: visit.isTest
-                                        ))
-                                    }
-                                }
-                            }
-
-                            if !ongoingLabs.isEmpty {
-                                AppointmentSectionHeader(title: "Test / Lab Appointments")
-                                ForEach(ongoingLabs) { visit in
-                                    if let position = visit.queuePosition {
-                                        TodayVisitCard(type: .ongoing(
-                                            doctor: visit.doctorName,
-                                            specialty: visit.specialty,
-                                            location: visit.location,
-                                            token: visit.token ?? "",
-                                            position: position,
-                                            isTest: visit.isTest
-                                        ))
-                                    }
-                                }
-                            }
-
-                            if ongoingDoctors.isEmpty && ongoingLabs.isEmpty {
-                                AppointmentEmptyState(icon: "clock.fill", message: "No ongoing appointments")
-                            }
+                            ongoingContent
 
                         } else if selectedTab == "Completed" {
                             if !pastDoctorVisits.isEmpty {
                                 AppointmentSectionHeader(title: "Doctor Visits")
                                 ForEach(pastDoctorVisits) { visit in
-                                    PastVisitCard(
-                                        title: visit.doctorName,
-                                        subtitle: visit.specialty,
-                                        date: visit.formattedDate,
-                                        isTest: visit.isTest
-                                    )
+                                    PastVisitCard(title: visit.doctorName, subtitle: visit.specialty, date: visit.formattedDate, isTest: visit.isTest)
                                 }
                             }
-
                             if !pastLabVisits.isEmpty {
                                 AppointmentSectionHeader(title: "Test / Lab Appointments")
                                 ForEach(pastLabVisits) { visit in
-                                    PastVisitCard(
-                                        title: visit.doctorName,
-                                        subtitle: visit.specialty,
-                                        date: visit.formattedDate,
-                                        isTest: visit.isTest
-                                    )
+                                    PastVisitCard(title: visit.doctorName, subtitle: visit.specialty, date: visit.formattedDate, isTest: visit.isTest)
                                 }
                             }
-
                             if pastDoctorVisits.isEmpty && pastLabVisits.isEmpty {
                                 AppointmentEmptyState(icon: "checkmark.circle.fill", message: "No completed appointments")
                             }
@@ -263,14 +194,10 @@ struct AppointmentsView: View {
                 .ignoresSafeArea()
             )
             .alert("Confirm Cancellation", isPresented: $showCancelAlert) {
-                Button("No", role: .cancel) {
-                    appointmentToCancel = nil
-                }
+                Button("No", role: .cancel) { appointmentToCancel = nil }
                 Button("Confirm", role: .destructive) {
                     if let appointment = appointmentToCancel {
-                        withAnimation {
-                            appointmentStore.removeAppointment(appointment.id)
-                        }
+                        withAnimation { appointmentStore.removeAppointment(appointment.id) }
                         appointmentToCancel = nil
                     }
                 }
@@ -306,6 +233,74 @@ struct AppointmentsView: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private var ongoingContent: some View {
+        let ongoingAppointments = currentAppointments
+
+        if ongoingAppointments.isEmpty {
+            AppointmentEmptyState(icon: "clock.fill", message: "No ongoing appointments")
+        } else {
+            AppointmentSectionHeader(title: "Active Visit")
+
+            ongoingJourneyBanner
+
+            TodayVisitCard(type: .flowProgress(flowViewModel: flowViewModel))
+
+            let otherOngoing = ongoingAppointments.filter { $0.id != flowViewModel.activeAppointmentId }
+            if !otherOngoing.isEmpty {
+                AppointmentSectionHeader(title: "Other Appointments")
+                ForEach(otherOngoing) { visit in
+                    if let position = visit.queuePosition {
+                        TodayVisitCard(type: .ongoing(
+                            doctor: visit.doctorName,
+                            specialty: visit.specialty,
+                            location: visit.location,
+                            token: visit.token ?? "",
+                            position: position,
+                            isTest: visit.isTest
+                        ))
+                    }
+                }
+            }
+        }
+    }
+
+    private var ongoingJourneyBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: flowViewModel.stageIcon)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(Color(hex: flowViewModel.stageColor[0]))
+                .frame(width: 36, height: 36)
+                .background(Color(hex: flowViewModel.stageColor[0]).opacity(0.12))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(flowViewModel.stageTitle)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.primary)
+                Text(flowViewModel.stageSubtitle)
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(.systemGray))
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            if flowViewModel.currentStage == .inQueue {
+                Text(flowViewModel.estimatedWaitText)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Color(hex: flowViewModel.stageColor[0]))
+            }
+        }
+        .padding(14)
+        .background(Color(hex: flowViewModel.stageColor[0]).opacity(0.07))
+        .cornerRadius(14)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color(hex: flowViewModel.stageColor[0]).opacity(0.2), lineWidth: 1)
+        )
     }
 }
 
@@ -346,52 +341,10 @@ struct AppointmentSubheader: View {
 }
 
 #Preview {
-    let sampleStore = AppointmentStore()
-    sampleStore.appointments = [
-        Appointment(
-            doctorName: "Dr. Sarah Wilson",
-            specialty: "Cardiologist",
-            location: "Heart Care Center",
-            token: "42",
-            queuePosition: 5,
-            date: Date(),
-            timeSlot: "10:30 AM",
-            status: .ongoing,
-            isTest: false,
-            patientName: "John Doe",
-            patientPhone: "0777123456",
-            totalAmount: 2300
-        ),
-        Appointment(
-            doctorName: "Blood Test",
-            specialty: "Lab",
-            location: "Laboratory 03",
-            token: "07",
-            queuePosition: nil,
-            date: Date(),
-            timeSlot: "11:30 AM",
-            status: .upcoming,
-            isTest: true,
-            patientName: "John Doe",
-            patientPhone: "0777123456",
-            totalAmount: 1200
-        ),
-        Appointment(
-            doctorName: "Dr. Sarah Perera",
-            specialty: "General Physician",
-            location: "ClinicFlow",
-            token: nil,
-            queuePosition: nil,
-            date: Calendar.current.date(byAdding: .day, value: -5, to: Date())!,
-            timeSlot: "9:00 AM",
-            status: .completed,
-            isTest: false,
-            patientName: "Alice Brown",
-            patientPhone: "0777888999",
-            totalAmount: 1800
-        )
-    ]
+    let store = AppointmentStore()
+    let flow = AppointmentFlowViewModel(appointmentStore: store)
     return AppointmentsView()
-            .environmentObject(sampleStore)
-            .environmentObject(AppRouter())
+        .environmentObject(store)
+        .environmentObject(AppRouter())
+        .environmentObject(flow)
 }

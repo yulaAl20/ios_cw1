@@ -12,8 +12,19 @@ struct ios_cw1App: App {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @AppStorage("isLoggedIn") private var isLoggedIn = false
     @AppStorage("isNewUser") private var isNewUser = false
-    @StateObject private var appointmentStore = AppointmentStore()
-    @StateObject private var router = AppRouter()
+
+    @StateObject private var appointmentStore: AppointmentStore
+    @StateObject private var router: AppRouter
+    @StateObject private var flowViewModel: AppointmentFlowViewModel
+
+    init() {
+        let store = AppointmentStore()
+        let routerObj = AppRouter()
+        let flow = AppointmentFlowViewModel(appointmentStore: store)
+        _appointmentStore = StateObject(wrappedValue: store)
+        _router = StateObject(wrappedValue: routerObj)
+        _flowViewModel = StateObject(wrappedValue: flow)
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -45,6 +56,7 @@ struct ios_cw1App: App {
             }
             .environmentObject(appointmentStore)
             .environmentObject(router)
+            .environmentObject(flowViewModel)
         }
     }
 }
