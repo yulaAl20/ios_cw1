@@ -157,27 +157,58 @@ extension NewCustomerHomeView {
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
-                    doctorCard
-                    doctorCard
+                    
+                    doctorCard(
+                        image: "doctor1",
+                        name: "Dr. Emma Wilson",
+                        specialty: "Neurologist"
+                    )
+                    
+                    doctorCard(
+                        image: "jenny_wilson",
+                        name: "Dr. Michael Lee",
+                        specialty: "Cardiologist"
+                    )
+                    
+                    doctorCard(
+                        image: "doctor3",
+                        name: "Dr. Sarah Parker",
+                        specialty: "Dermatologist"
+                    )
                 }
             }
         }
     }
     
-    var doctorCard: some View {
-        VStack(alignment: .leading) {
-            RoundedRectangle(cornerRadius: 24)
-                .fill(Color.blue.opacity(0.15))
-                .frame(width: 200, height: 200)
+    func doctorCard(image: String, name: String, specialty: String) -> some View {
+        
+        VStack(alignment: .leading, spacing: 8) {
             
-            Text("Dr. Emma Wilson")
+            ZStack(alignment: .topLeading) {
+                
+                Image(image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 220, height: 220)
+                    .clipped()
+                    .cornerRadius(24)
+                
+                Text("⭐ 5.0")
+                    .font(.caption)
+                    .padding(6)
+                    .background(Color.white.opacity(0.9))
+                    .cornerRadius(10)
+                    .padding(8)
+            }
+            
+            Text(name)
                 .font(.headline)
             
-            Text("Neurologist")
+            Text(specialty)
                 .font(.subheadline)
                 .foregroundColor(.gray)
         }
-        .frame(width: 200)
+        .frame(width: 220)
     }
 }
 

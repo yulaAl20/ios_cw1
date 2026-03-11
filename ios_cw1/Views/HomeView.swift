@@ -243,7 +243,7 @@ extension HomeView {
                     )
                     
                     doctorCard(
-                        image: "doctor2",
+                        image: "jenny_wilson",
                         name: "Dr. Michael Lee",
                         specialty: "Cardiologist"
                     )
