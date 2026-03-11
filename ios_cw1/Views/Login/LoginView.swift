@@ -278,6 +278,14 @@ struct LoginView: View {
                 isLoggedIn = true
             }
         }
+        .fullScreenCover(isPresented: $showHomeView) {
+            HomeView()
+        }
+        .onChange(of: viewModel.isAuthenticated) { _, newValue in
+            if newValue {
+                showHomeView = true
+            }
+        }
         
     }
 }

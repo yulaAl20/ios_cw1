@@ -244,20 +244,7 @@ struct SignUpView: View {
                             .shadow(color: Color.black.opacity(0.1), radius: 20, x: 0, y: -5)
                     )
                     
-                    // Continue as Guest button - positioned at top overlapping the card
-                    Button(action: {
-                        viewModel.continueAsGuest()
-                    }) {
-                        Text("Continue as a Guest")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(Color(red: 0.3, green: 0.5, blue: 0.8))
-                            .padding(.horizontal, 30)
-                            .padding(.vertical, 12)
-                            .background(Color.white)
-                            .cornerRadius(25)
-                            .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
-                    }
-                    .offset(y: -25)
+                    // ...existing code...
                 }
             }
             .ignoresSafeArea(edges: .bottom)
