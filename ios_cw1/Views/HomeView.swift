@@ -159,22 +159,61 @@ extension HomeView {
                 .font(.headline)
             
             HStack(spacing: 0) {
-                quickServiceItem(icon: "stethoscope", title: "Find\nDoctor", color: .blue)
-                quickServiceItem(icon: "cross.case.fill", title: "Lab\nReports", color: .green)
+                // Find Doctor
+                NavigationLink(destination: ChooseDoctorView(selectedTab: $router.currentTab)) {
+                    VStack(spacing: 6) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.blue.opacity(0.12))
+                                .frame(width: 50, height: 50)
+                            Image(systemName: "stethoscope")
+                                .font(.system(size: 20))
+                                .foregroundColor(.blue)
+                        }
+                        Text("Find\nDoctor")
+                            .font(.system(size: 10))
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
                 
-                // Pharmacy with navigation
+                // Lab Reports
+                NavigationLink(destination: PastTestsAndOrdersView()) {
+                    VStack(spacing: 6) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.green.opacity(0.12))
+                                .frame(width: 50, height: 50)
+                            Image(systemName: "cross.case.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(.green)
+                        }
+                        Text("Lab\nReports")
+                            .font(.system(size: 10))
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
+                
+                // Pharmacy
                 NavigationLink(destination: PharmacyView()) {
                     VStack(spacing: 6) {
                         ZStack {
                             Circle()
                                 .fill(Color.orange.opacity(0.12))
                                 .frame(width: 50, height: 50)
-                            
                             Image(systemName: "pills.fill")
                                 .font(.system(size: 20))
                                 .foregroundColor(.orange)
                         }
-                        
                         Text("Pharmacy")
                             .font(.system(size: 10))
                             .foregroundColor(.gray)
@@ -186,7 +225,27 @@ extension HomeView {
                 }
                 .buttonStyle(.plain)
                 
-                quickServiceItem(icon: "waveform.path.ecg", title: "Scans", color: .purple)
+                // Scans
+                NavigationLink(destination: PastTestsAndOrdersView(initialFilter: .radiology)) {
+                    VStack(spacing: 6) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.purple.opacity(0.12))
+                                .frame(width: 50, height: 50)
+                            Image(systemName: "waveform.path.ecg")
+                                .font(.system(size: 20))
+                                .foregroundColor(.purple)
+                        }
+                        Text("Scans")
+                            .font(.system(size: 10))
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding()

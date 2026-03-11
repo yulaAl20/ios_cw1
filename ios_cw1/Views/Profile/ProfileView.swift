@@ -11,10 +11,9 @@ struct ProfileView: View {
     @Environment(\.dismiss) var dismiss
     @AppStorage("isLoggedIn") private var isLoggedIn = true
     
-    @AppStorage("userName") private var userName: String = ""
-    @AppStorage("userPhoneNumber") private var userPhone: String = ""
-    
-    let patientID = "#482931"
+    // Hardcoded user info
+    let userName: String = "Yulani Alwis"
+    let userPhone: String = "07777777777"
     
     var body: some View {
         VStack(spacing: 0) {
@@ -55,25 +54,18 @@ struct ProfileView: View {
                     .padding(.top, 20)
                     
                     // Name
-                    Text(userName.isEmpty ? "Your Name" : userName)
+                    Text(userName)
                         .font(.title2)
                         .fontWeight(.semibold)
-                    
-                    // Patient ID
-                    Text("Patient ID: \(patientID)")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                    
+
                     // Phone number
-                    if !userPhone.isEmpty {
-                        HStack(spacing: 6) {
-                            Image(systemName: "phone.fill")
-                                .font(.caption)
-                                .foregroundColor(.blue)
-                            Text(userPhone)
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                        }
+                    HStack(spacing: 6) {
+                        Image(systemName: "phone.fill")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                        Text(userPhone)
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
                     }
                     
                     // Menu items

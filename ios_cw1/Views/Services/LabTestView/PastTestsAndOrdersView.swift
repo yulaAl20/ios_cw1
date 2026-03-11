@@ -12,6 +12,10 @@ struct PastTestsAndOrdersView: View {
     @Environment(\.dismiss) var dismiss
     @State private var selectedFilter: TestCategory? = nil
     
+    init(initialFilter: TestCategory? = nil) {
+        _selectedFilter = State(initialValue: initialFilter)
+    }
+    
     // test data
     private let testResults: [TestResult] = [
         TestResult(
@@ -138,7 +142,7 @@ extension PastTestsAndOrdersView {
             }
             
             VStack(alignment: .leading, spacing: 2) {
-                Text("Past Tests & Orders")
+                Text("Past Tests and Lab Reports")
                     .font(.system(size: 22, weight: .bold))
                     .foregroundColor(.black)
                 
