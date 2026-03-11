@@ -4,6 +4,7 @@
 //
 //  Created by Yulani Alwis on 2026-03-10.
 //
+//
 
 import SwiftUI
 
@@ -626,29 +627,28 @@ struct BookingPaymentConfirmationView: View {
             .padding(.bottom, 30)
         }
     }
-    
-    // MARK: - Save Appointment
+
     
     private func saveAppointment() {
         let newAppointment = Appointment(
-                doctorName: doctor.fullName,
-                specialty: doctor.specialty,
-                location: location,
-                token: "\(Int.random(in: 10...99))", // generate a random token
-                queuePosition: nil,
-                date: selectedDate,
-                timeSlot: selectedTimeSlot,
-                status: viewModel.selectedPaymentMethod == .counter ? .upcoming : .upcoming, // adjust as needed
-                isTest: false,
-                patientName: patientName.isEmpty ? "Yulani Alwis" : patientName,
-                patientPhone: patientPhone.isEmpty ? "0777777777" : patientPhone,
-                totalAmount: viewModel.totalAmount
-            )
-            
-            appointmentStore.addAppointment(newAppointment)
+            doctorName: doctor.fullName,
+            specialty: doctor.specialty,
+            location: location,
+            token: "\(Int.random(in: 10...99))",
+            queuePosition: Int.random(in: 3...15),
+            totalInQueue: Int.random(in: 15...25),
+            date: selectedDate,
+            timeSlot: selectedTimeSlot,
+            status: .upcoming,
+            isTest: false,
+            patientName: patientName.isEmpty ? "Yulani Alwis" : patientName,
+            patientPhone: patientPhone.isEmpty ? "0777777777" : patientPhone,
+            totalAmount: viewModel.totalAmount,
+            flowStage: .inQueue
+        )
+        appointmentStore.addAppointment(newAppointment)
     }
-    
-    // MARK: - Share Text
+
     
     var counterShareText: String {
         """
