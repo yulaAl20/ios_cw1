@@ -18,10 +18,16 @@ struct NavigationRoute {
     
     static func getRoute(from start: String, to end: String, floor: String) -> NavigationRoute? {
         let allRoutes = getAllRoutes()
-        return allRoutes.first { route in
-            (route.start == start && route.end == end && route.floor == floor) ||
-            (route.start == end && route.end == start && route.floor == floor)
+        
+        if let exactMatch = allRoutes.first(where: {
+            $0.start == start && $0.end == end && $0.floor == floor
+        }) {
+            return exactMatch
         }
+        
+        return allRoutes.first(where: {
+            $0.start == end && $0.end == start && $0.floor == floor
+        })
     }
     
     static func getAllRoutes() -> [NavigationRoute] {
@@ -53,6 +59,21 @@ struct NavigationRoute {
                     NavigationStep(instruction: "Emergency Department is on your left", stepNumber: 3, distance: 20)
                 ],
                 pathLocations: ["Reception", "Emergency Dept"]
+            ),
+            
+            NavigationRoute(
+                start: "Emergency Dept",
+                end: "Reception",
+                floor: "Floor 1",
+                distance: 40,
+                estimatedTime: 2,
+                steps: [
+                    NavigationStep(instruction: "Exit the Emergency Department", stepNumber: 1, distance: 0),
+                    NavigationStep(instruction: "Walk up the main corridor", stepNumber: 2, distance: 20),
+                    NavigationStep(instruction: "Turn right when you reach the junction", stepNumber: 3, distance: 10),
+                    NavigationStep(instruction: "Walk up the main corridor till you reach Reception", stepNumber: 4, distance: 20)
+                ],
+                pathLocations: ["Emergency Dept", "Reception"]
             ),
             
             NavigationRoute(
@@ -661,9 +682,7 @@ struct IndoorNavigationView: View {
                 .frame(width: width * 0.4, height: subHorizontal)
                 .position(x: width * 0.7, y: height * 0.65)
             
-            
-            // MARK: ENTRANCE
-            
+    
             if selectedFloor == "Floor 1" {
                 HStack(spacing: 4) {
                     Image(systemName: "door.left.hand.open")
