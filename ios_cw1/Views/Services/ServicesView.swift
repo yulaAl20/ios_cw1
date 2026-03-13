@@ -89,7 +89,7 @@ struct ServicesView: View {
                     
                     VStack(alignment: .leading, spacing: 20) {
                         
-                        Spacer().frame(height: 110)
+                        Spacer().frame(height: 60)
                         
                         // Carousel Cards
                         quickActionCarousel
@@ -260,8 +260,6 @@ extension ServicesView {
                 NavigationLink(destination: PastTestsAndOrdersView()) {
                     
                     HStack(spacing: 6) {
-                        Image(systemName: "doc.text.magnifyingglass")
-                        
                         Text("View Past Reports")
                             .font(.system(size: 14, weight: .semibold))
                     }
@@ -438,4 +436,5 @@ extension ServicesView {
     ServicesView()
         .environmentObject(AppRouter())
         .environmentObject(AppointmentStore())
+        .environmentObject(AccessibilityViewModel())
 }

@@ -15,6 +15,33 @@ struct HomeView: View {
     @State private var animatePulse: Bool = false
     @State private var showProgressSheet: Bool = false
 
+    @State private var searchQuery: String = ""
+    @FocusState private var isSearchFocused: Bool
+
+    private var searchCandidates: [SmartSearch.Result] {
+        [
+            .init(title: "Find Doctor", subtitle: "Book an appointment", score: 0, payload: .findDoctor),
+            .init(title: "Lab Reports", subtitle: "Past tests & lab reports", score: 0, payload: .labReports),
+            .init(title: "Scans", subtitle: "Imaging reports (MRI, X-Ray)", score: 0, payload: .scans),
+            .init(title: "Pharmacy", subtitle: "Medicines & prescriptions", score: 0, payload: .pharmacy),
+            .init(title: "Indoor Navigation", subtitle: "Find directions inside the clinic", score: 0, payload: .indoorNavigation),
+            .init(title: "Services", subtitle: "Browse clinic services", score: 0, payload: .services),
+            .init(title: "Appointments", subtitle: "Upcoming and past appointments", score: 0, payload: .appointments)
+        ]
+    }
+
+    private var searchResults: [SmartSearch.Result] {
+        SmartSearch.search(query: searchQuery, in: searchCandidates)
+    }
+
+    private var trimmedQuery: String {
+        searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var shownSearchResults: [SmartSearch.Result] {
+        Array(searchResults.prefix(6))
+    }
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
@@ -40,7 +67,7 @@ struct HomeView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 24) {
-                        Color.clear.frame(height: 120)
+                        Color.clear.frame(height: 100)
 
                         activeQueueCard
                         quickServicesSection
@@ -52,11 +79,83 @@ struct HomeView: View {
                     .padding(.horizontal, 20)
                 }
 
-                VStack(spacing: 0) {
+                // Header + inline search
+                VStack(spacing: 10) {
                     HeaderView(title: "Clinic Flow")
                         .padding(.horizontal, 20)
-                        .padding(.bottom, 10)
+                        .padding(.top, 0)
+
+                    VStack(spacing: 8) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(.secondary)
+
+                            TextField("Search doctors, reports, scans...", text: $searchQuery)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .focused($isSearchFocused)
+
+                            if !searchQuery.isEmpty {
+                                Button {
+                                    searchQuery = ""
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.secondary)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Clear search")
+                            }
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(16)
+                    }
+                    .padding(.horizontal, 20)
+
+                    if isSearchFocused && !trimmedQuery.isEmpty {
+                        VStack(spacing: 0) {
+                            if shownSearchResults.isEmpty {
+                                Text("No results")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 12)
+                            } else {
+                                ForEach(Array(shownSearchResults.enumerated()), id: \.element.id) { index, item in
+                                    Button {
+                                        handleSearchSelection(item)
+                                    } label: {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(item.title)
+                                                .font(.system(size: 15, weight: .semibold))
+                                                .foregroundColor(.primary)
+                                            if let subtitle = item.subtitle {
+                                                Text(subtitle)
+                                                    .font(.system(size: 12))
+                                                    .foregroundColor(.secondary)
+                                            }
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 10)
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    if index != shownSearchResults.count - 1 {
+                                        Divider().padding(.leading, 14)
+                                    }
+                                }
+                            }
+                        }
+                        .background(Color.white)
+                        .cornerRadius(16)
+                        .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 4)
+                        .padding(.horizontal, 20)
+                    }
                 }
+                .padding(.bottom, 10)
                 .background(Color.white)
             }
             .safeAreaInset(edge: .bottom) {
@@ -83,6 +182,29 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    private func handleSearchSelection(_ item: SmartSearch.Result) {
+        switch item.payload {
+        case .findDoctor:
+            router.currentTab = 0
+        case .labReports:
+            router.currentTab = 1
+        case .scans:
+            router.currentTab = 1
+        case .pharmacy:
+            router.currentTab = 1
+        case .indoorNavigation:
+            router.currentTab = 3
+        case .services:
+            router.currentTab = 1
+        case .appointments:
+            router.currentTab = 2
+        }
+
+        // Dismiss keyboard + collapse the dropdown
+        isSearchFocused = false
+        searchQuery = ""
     }
 }
 
@@ -501,9 +623,13 @@ extension HomeView {
 
 #Preview {
     let store = AppointmentStore()
+    let router = AppRouter()
     let flow = AppointmentFlowViewModel(appointmentStore: store)
+    let accessibilityVM = AccessibilityViewModel()
+
     return HomeView()
-        .environmentObject(AppRouter())
+        .environmentObject(router)
         .environmentObject(store)
         .environmentObject(flow)
+        .environmentObject(accessibilityVM)
 }
