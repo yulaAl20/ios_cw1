@@ -362,14 +362,7 @@ extension LabVisitDetailsView {
 
         } else {
             Divider().padding(.leading, 16)
-            HStack(spacing: 10) {
-                Image(systemName: "exclamationmark.circle")
-                    .font(.system(size: 16))
-                    .foregroundColor(.orange)
-                Text("No profile information saved. Go to Profile → Edit Details to add your details.")
-                    .font(.system(size: 13))
-                    .foregroundColor(.gray)
-            }
+            
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
         }
