@@ -8,10 +8,11 @@ struct NewCustomerHomeView: View {
     
     @EnvironmentObject var router: AppRouter
     @State private var animatePulse: Bool = false
-    @State private var showBookingFlow = false   // Add this
-    
-    var body: some View {
-        ZStack(alignment: .top) {
+    @State private var showBookingFlow = false
+    @State private var showProfile = false
+     
+     var body: some View {
+         ZStack(alignment: .top) {
             
             // Background
             VStack(spacing: 0) {
@@ -41,7 +42,7 @@ struct NewCustomerHomeView: View {
             ScrollView(showsIndicators: false){
                 VStack(spacing: 24) {
                     Spacer()
-                        .frame(height: 100)
+                        .frame(height: 70)
                     
                     quickServicesSection
                     bookAppointmentCard
@@ -56,7 +57,8 @@ struct NewCustomerHomeView: View {
             // Sticky Header
             VStack(spacing: 0) {
                 HeaderView(
-                    title: "ClinicFlow"
+                    title: "ClinicFlow",
+                    onProfileTapped: { showProfile = true }
                 )
                 .padding(.horizontal, 20)
                 .padding(.bottom, 8)
@@ -76,6 +78,11 @@ struct NewCustomerHomeView: View {
                 ChooseDoctorView(selectedTab: $router.currentTab, onFlowComplete: {
                     showBookingFlow = false
                 })
+            }
+        }
+        .sheet(isPresented: $showProfile) {
+            NavigationStack {
+                ProfileView()
             }
         }
     }
@@ -227,4 +234,6 @@ extension NewCustomerHomeView {
 #Preview {
     NewCustomerHomeView()
         .environmentObject(AppRouter())
+        .environmentObject(AppointmentStore())
+        .environmentObject(AppointmentFlowViewModel(appointmentStore: AppointmentStore()))
 }

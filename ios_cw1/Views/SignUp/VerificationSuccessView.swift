@@ -94,7 +94,11 @@ struct VerificationSuccessView: View {
                 }
 
                 Button(action: {
+                    // User chose not to enable biometrics; notify parent and navigate
                     navigateToHome = true
+                    DispatchQueue.main.async {
+                        onMaybeLater?()
+                    }
                 }) {
                     Text("Maybe Later")
                         .font(.system(size: 16, weight: .semibold))
@@ -140,6 +144,8 @@ struct VerificationSuccessView: View {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                             showFaceIDOverlay = false
                             navigateToHome = true
+                            // Notify parent that biometrics were enabled
+                            DispatchQueue.main.async { onEnableBiometrics?() }
                         }
                     } else {
                         showFaceIDOverlay = false
@@ -153,6 +159,8 @@ struct VerificationSuccessView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     showFaceIDOverlay = false
                     navigateToHome = true
+                    // Even if biometrics aren't available, treat this as completed enable flow
+                    DispatchQueue.main.async { onEnableBiometrics?() }
                 }
             }
         }

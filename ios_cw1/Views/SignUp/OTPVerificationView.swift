@@ -16,7 +16,6 @@ struct OTPVerificationView: View {
     @StateObject private var vm: OTPViewModel
     @Environment(\.dismiss) private var dismiss
     @FocusState private var isTextFieldFocused: Bool
-    @State private var showSuccess = false
     @State private var otpText = ""
 
     init(phoneNumber: String, isLogin: Bool = false, onVerified: (() -> Void)? = nil) {
@@ -38,12 +37,7 @@ struct OTPVerificationView: View {
             resendButton
             Spacer()
         }
-        .fullScreenCover(isPresented: $showSuccess) {
-            VerificationSuccessView(
-                onEnableBiometrics: { showSuccess = false; dismiss() },
-                onMaybeLater: { showSuccess = false; dismiss() }
-            )
-        }
+        // Note: presentation of the VerificationSuccessView is handled by the parent (SignUpView).
         .alert("Error", isPresented: $vm.showingError) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -111,11 +105,14 @@ struct OTPVerificationView: View {
                             if success {
                                 if isLogin {
                                     // Existing user: skip VerificationSuccessView, go straight to HomeView
-                                    onVerified?()
+                                    DispatchQueue.main.async {
+                                        onVerified?()
+                                    }
                                 } else {
-                                    // New user: show VerificationSuccessView
-                                    showSuccess = true
-                                    onVerified?()
+                                    // New user: inform parent to show VerificationSuccessView
+                                    DispatchQueue.main.async {
+                                        onVerified?()
+                                    }
                                 }
                             } else {
                                 // Clear input on wrong OTP
@@ -191,10 +188,10 @@ struct OTPVerificationView: View {
             vm.verify { success in
                 if success {
                     if isLogin {
-                        onVerified?()
+                        DispatchQueue.main.async { onVerified?() }
                     } else {
-                        showSuccess = true
-                        onVerified?()
+                        // New user: tell parent to present the verification success screen
+                        DispatchQueue.main.async { onVerified?() }
                     }
                 }
             }
@@ -235,4 +232,3 @@ struct OTPVerificationView: View {
 #Preview {
     OTPVerificationView(phoneNumber: "+94 72 222 3333")
 }
-

@@ -88,7 +88,35 @@ class PaymentViewModel: ObservableObject {
         selectedCard = card
     }
 
-    // MARK: - QR Code Generation
+    //- QR Code Generation
+
+    /// Generate a QR code for a specific booking reference/receipt.
+    /// This matches the QR style used in the payment success screens, but lets callers (like Appointments)
+    /// display the QR later using the stored appointment token.
+    func generatePaymentQRCode(from receipt: String) -> UIImage? {
+        guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" else { return nil }
+
+        let qrData = """
+        {
+            "type": "booking_reference",
+            "receipt": "\(receipt)",
+            "timestamp": "\(ISO8601DateFormatter().string(from: Date()))"
+        }
+        """
+
+        let context = CIContext()
+        let filter  = CIFilter.qrCodeGenerator()
+        filter.message          = Data(qrData.utf8)
+        filter.correctionLevel  = "M"
+
+        if let outputImage = filter.outputImage {
+            let scaled = outputImage.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
+            if let cgImage = context.createCGImage(scaled, from: scaled.extent) {
+                return UIImage(cgImage: cgImage)
+            }
+        }
+        return nil
+    }
 
     func generatePaymentQRCode() -> UIImage? {
         guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" else { return nil }

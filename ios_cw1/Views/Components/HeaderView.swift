@@ -10,6 +10,8 @@ import SwiftUI
 struct HeaderView: View {
     
     var title: String? = nil
+    // Optional parent-provided handler for profile taps. If set, HeaderView will call this instead of presenting its own sheet.
+    var onProfileTapped: (() -> Void)? = nil
     @State private var showProfile = false
     @State private var showNotifications = false
     
@@ -17,7 +19,13 @@ struct HeaderView: View {
         VStack(spacing: 10) {
             // Title row (profile icon, title text, bell icon)
             HStack(spacing: 12) {
-                Button(action: { showProfile = true }) {
+                Button(action: {
+                    if let handler = onProfileTapped {
+                        handler()
+                    } else {
+                        showProfile = true
+                    }
+                }) {
                     ZStack {
                         Circle()
                             .fill(Color.white.opacity(0.25))

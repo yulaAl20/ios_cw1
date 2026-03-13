@@ -13,9 +13,11 @@ struct SignUpView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showOTP = false
     @State private var otpPhoneNumber: String = ""
+    // Show the success/biometrics screen after OTP verification
+    @State private var showVerificationSuccess = false
     
     let countryCodes = ["+94", "+1", "+44", "+91", "+61"]
-    
+
     var body: some View {
         ZStack {
             // Background gradient
@@ -268,17 +270,36 @@ struct SignUpView: View {
         }
         .alert("Success", isPresented: $viewModel.showingSuccessAlert) {
             Button("OK", role: .cancel) {
-                dismiss()
+                // No explicit dismiss here; the app root will update to the authenticated UI.
+                // Avoid calling dismiss() because SignUpView may be deallocated when the root changes.
             }
         } message: {
             Text("Account created successfully!")
         }
         .sheet(isPresented: $showOTP) {
             OTPVerificationView(phoneNumber: otpPhoneNumber) {
-                // After OTP verified, proceed with account creation
-                viewModel.createAccount()
+                // After OTP verified in the OTP sheet, present the VerificationSuccessView from the SignUp view
+                showOTP = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+                    showVerificationSuccess = true
+                }
             }
         }
+        .fullScreenCover(isPresented: $showVerificationSuccess) {
+            VerificationSuccessView(
+                onEnableBiometrics: {
+                    // User enabled biometrics in the verification screen -> create account and dismiss sign up
+                    viewModel.createAccount()
+                    showVerificationSuccess = false
+                    // The createAccount flow sets isLoggedIn/isNewUser and showingSuccessAlert which will dismiss the view on OK
+                },
+                onMaybeLater: {
+                    // User skipped biometrics -> still create account and dismiss
+                    viewModel.createAccount()
+                    showVerificationSuccess = false
+                }
+            )
+         }
     }
 }
 

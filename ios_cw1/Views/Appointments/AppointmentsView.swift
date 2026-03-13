@@ -21,6 +21,16 @@ struct AppointmentsView: View {
     @State private var appointmentToReschedule: Appointment? = nil
     @State private var showReschedule = false
     @State private var showLabReschedule = false
+    // Show the booking QR sheet (same QR shown after payment)
+    @State private var showBookingQR = false
+    @State private var selectedAppointmentForQR: Appointment? = nil
+
+    private let qrGenerator = PaymentViewModel(totalPrice: 0)
+
+    private func presentBookingQR(for appointment: Appointment) {
+        selectedAppointmentForQR = appointment
+        showBookingQR = true
+    }
 
     private var currentAppointments: [Appointment] {
         switch selectedTab {
@@ -136,22 +146,50 @@ struct AppointmentsView: View {
                             }
                             if !todayDoctorVisits.isEmpty {
                                 AppointmentSubheader(title: "Today")
-                                ForEach(todayDoctorVisits) { visit in upcomingCard(for: visit) }
+                                ForEach(todayDoctorVisits) { visit in
+                                    Button(action: {
+                                        presentBookingQR(for: visit)
+                                    }) {
+                                        upcomingCard(for: visit)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
                             if !futureDoctorVisits.isEmpty {
                                 AppointmentSubheader(title: "Upcoming")
-                                ForEach(futureDoctorVisits) { visit in upcomingCard(for: visit) }
+                                ForEach(futureDoctorVisits) { visit in
+                                    Button(action: {
+                                        presentBookingQR(for: visit)
+                                    }) {
+                                        upcomingCard(for: visit)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
                             if hasLabAppointments {
                                 AppointmentSectionHeader(title: "Test / Lab Appointments")
                             }
                             if !todayLabVisits.isEmpty {
                                 AppointmentSubheader(title: "Today")
-                                ForEach(todayLabVisits) { visit in upcomingCard(for: visit) }
+                                ForEach(todayLabVisits) { visit in
+                                    Button(action: {
+                                        presentBookingQR(for: visit)
+                                    }) {
+                                        upcomingCard(for: visit)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
                             if !futureLabVisits.isEmpty {
                                 AppointmentSubheader(title: "Upcoming")
-                                ForEach(futureLabVisits) { visit in upcomingCard(for: visit) }
+                                ForEach(futureLabVisits) { visit in
+                                    Button(action: {
+                                        presentBookingQR(for: visit)
+                                    }) {
+                                        upcomingCard(for: visit)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
                             if !hasDoctorAppointments && !hasLabAppointments {
                                 AppointmentEmptyState(icon: "calendar.badge.clock", message: "No upcoming appointments")
@@ -164,13 +202,23 @@ struct AppointmentsView: View {
                             if !pastDoctorVisits.isEmpty {
                                 AppointmentSectionHeader(title: "Doctor Visits")
                                 ForEach(pastDoctorVisits) { visit in
-                                    PastVisitCard(title: visit.doctorName, subtitle: visit.specialty, date: visit.formattedDate, isTest: visit.isTest)
+                                    Button(action: {
+                                        presentBookingQR(for: visit)
+                                    }) {
+                                        PastVisitCard(title: visit.doctorName, subtitle: visit.specialty, date: visit.formattedDate, isTest: visit.isTest)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                             }
                             if !pastLabVisits.isEmpty {
                                 AppointmentSectionHeader(title: "Test / Lab Appointments")
                                 ForEach(pastLabVisits) { visit in
-                                    PastVisitCard(title: visit.doctorName, subtitle: visit.specialty, date: visit.formattedDate, isTest: visit.isTest)
+                                    Button(action: {
+                                        presentBookingQR(for: visit)
+                                    }) {
+                                        PastVisitCard(title: visit.doctorName, subtitle: visit.specialty, date: visit.formattedDate, isTest: visit.isTest)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                             }
                             if pastDoctorVisits.isEmpty && pastLabVisits.isEmpty {
@@ -184,6 +232,28 @@ struct AppointmentsView: View {
                     .padding(.top, 8)
                 }
             }
+            // Present booking QR (same payload as after payment)
+            .sheet(isPresented: $showBookingQR) {
+                if let appt = selectedAppointmentForQR {
+                    let receipt = (appt.token?.isEmpty == false) ? (appt.token ?? "") : String(appt.id.uuidString.prefix(8))
+                    let amountText = String(format: "%.2f", appt.totalAmount)
+                     AppointmentQRCodeSheet(
+                         title: appt.isTest ? "Lab Visit Confirmed" : "Appointment Confirmed",
+                         receiptNumber: receipt,
+                         qrImage: qrGenerator.generatePaymentQRCode(from: receipt),
+                         primaryMessage: "Scan at Counter",
+                         secondaryMessage: appt.isTest
+                             ? "Show this QR code at the lab reception\nfor quick check-in"
+                             : "Show this QR code at the reception\nfor quick check-in",
+                         details: [
+                             .init(label: appt.isTest ? "Test" : "Doctor", value: appt.doctorName),
+                             .init(label: "Date & Time", value: "\(appt.formattedDate) • \(appt.timeSlot)"),
+                             .init(label: "Location", value: appt.location),
+                            .init(label: "Amount", value: "LKR \(amountText)")
+                         ]
+                     )
+                 }
+             }
             .navigationBarHidden(true)
             .background(
                 LinearGradient(
@@ -246,21 +316,34 @@ struct AppointmentsView: View {
 
             ongoingJourneyBanner
 
-            TodayVisitCard(type: .flowProgress(flowViewModel: flowViewModel))
+            // Allow tapping the main flow progress card to open the QR scanner
+            Button(action: {
+                if let appt = appointmentStore.activeAppointment {
+                    presentBookingQR(for: appt)
+                }
+            }) {
+                TodayVisitCard(type: .flowProgress(flowViewModel: flowViewModel))
+            }
+            .buttonStyle(.plain)
 
             let otherOngoing = ongoingAppointments.filter { $0.id != flowViewModel.activeAppointmentId }
             if !otherOngoing.isEmpty {
                 AppointmentSectionHeader(title: "Other Appointments")
                 ForEach(otherOngoing) { visit in
                     if let position = visit.queuePosition {
-                        TodayVisitCard(type: .ongoing(
-                            doctor: visit.doctorName,
-                            specialty: visit.specialty,
-                            location: visit.location,
-                            token: visit.token ?? "",
-                            position: position,
-                            isTest: visit.isTest
-                        ))
+                        Button(action: {
+                            presentBookingQR(for: visit)
+                        }) {
+                            TodayVisitCard(type: .ongoing(
+                                doctor: visit.doctorName,
+                                specialty: visit.specialty,
+                                location: visit.location,
+                                token: visit.token ?? "",
+                                position: position,
+                                isTest: visit.isTest
+                            ))
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }

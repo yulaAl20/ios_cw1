@@ -52,6 +52,20 @@ class SignUpViewModel: NSObject, ObservableObject {
         UserDefaults.standard.set(callingName, forKey: "userName")
         UserDefaults.standard.set("\(countryCode) \(phoneNumber)", forKey: "userPhoneNumber")
         
+        // Create a local user model and mark as authenticated
+        currentUser = User(
+            id: UUID().uuidString,
+            name: callingName,
+            email: nil,
+            phoneNumber: "\(countryCode) \(phoneNumber)",
+            loginMethod: .phone
+        )
+        isAuthenticated = true
+
+        // Mirror into AppStorage so the app switches to the authenticated state
+        UserDefaults.standard.set(true, forKey: "isLoggedIn")
+        UserDefaults.standard.set(true, forKey: "isNewUser")
+
         showingSuccessAlert = true
     }
 
