@@ -10,20 +10,23 @@ import SwiftUI
 @main
 struct ios_cw1App: App {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
-    @AppStorage("isLoggedIn") private var isLoggedIn = false
-    @AppStorage("isNewUser") private var isNewUser = false
+    @AppStorage("isLoggedIn")        private var isLoggedIn = false
+    @AppStorage("isNewUser")         private var isNewUser  = false
 
-    @StateObject private var appointmentStore: AppointmentStore
-    @StateObject private var router: AppRouter
-    @StateObject private var flowViewModel: AppointmentFlowViewModel
+    @StateObject private var appointmentStore:   AppointmentStore
+    @StateObject private var router:             AppRouter
+    @StateObject private var flowViewModel:      AppointmentFlowViewModel
+    @StateObject private var accessibilityVM:    AccessibilityViewModel
 
     init() {
-        let store = AppointmentStore()
+        let store  = AppointmentStore()
         let routerObj = AppRouter()
-        let flow = AppointmentFlowViewModel(appointmentStore: store)
-        _appointmentStore = StateObject(wrappedValue: store)
-        _router = StateObject(wrappedValue: routerObj)
-        _flowViewModel = StateObject(wrappedValue: flow)
+        let flow   = AppointmentFlowViewModel(appointmentStore: store)
+        let a11y   = AccessibilityViewModel()
+        _appointmentStore  = StateObject(wrappedValue: store)
+        _router            = StateObject(wrappedValue: routerObj)
+        _flowViewModel     = StateObject(wrappedValue: flow)
+        _accessibilityVM   = StateObject(wrappedValue: a11y)
     }
 
     var body: some Scene {
@@ -37,11 +40,7 @@ struct ios_cw1App: App {
                     Group {
                         switch router.currentTab {
                         case 0:
-                            if isNewUser {
-                                NewCustomerHomeView()
-                            } else {
-                                HomeView()
-                            }
+                            if isNewUser { NewCustomerHomeView() } else { HomeView() }
                         case 1:
                             ServicesView()
                         case 2:
@@ -57,6 +56,11 @@ struct ios_cw1App: App {
             .environmentObject(appointmentStore)
             .environmentObject(router)
             .environmentObject(flowViewModel)
+            .environmentObject(accessibilityVM)
+            // Mirror the in-app reduce-motion setting onto SwiftUI's transaction system
+            .transaction { t in
+                if accessibilityVM.isReduceMotionEnabled { t.animation = nil }
+            }
         }
     }
 }

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct DoctorCard: View {
     let doctor: Doctor
+    @EnvironmentObject var accessibilityVM: AccessibilityViewModel
 
     var body: some View {
         HStack(spacing: 16) {
@@ -31,9 +32,9 @@ struct DoctorCard: View {
                         )
                 }
             }
+            .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 4) {
-                // Combine first and last name
                 Text(doctor.fullName)
                     .font(.headline)
 
@@ -46,19 +47,32 @@ struct DoctorCard: View {
                         Image(systemName: "star.fill")
                             .font(.caption)
                             .foregroundColor(.yellow)
+                            .accessibilityHidden(true)
                         Text(String(format: "%.1f", doctor.rating))
                             .font(.subheadline)
                             .fontWeight(.semibold)
                     }
+                    .accessibilityLabel("\(String(format: "%.1f", doctor.rating)) stars")
                 }
 
+                // Availability: always show text label, not color alone
                 HStack(spacing: 4) {
-                    Circle()
-                        .fill(Color.green)
-                        .frame(width: 8, height: 8)
-                    Text(doctor.availableTime)
+                    if !accessibilityVM.isColorBlindModeActive {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 8, height: 8)
+                            .accessibilityHidden(true)
+                    } else {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(.primary)
+                            .accessibilityHidden(true)
+                    }
+                    Text("Available — \(doctor.availableTime)")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(
+                            accessibilityVM.isHighContrastEnabled ? .primary : .gray
+                        )
                 }
             }
         }
@@ -66,6 +80,12 @@ struct DoctorCard: View {
         .background(Color.white)
         .cornerRadius(16)
         .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "\(doctor.fullName), \(doctor.specialty), " +
+            "\(String(format: "%.1f", doctor.rating)) stars, " +
+            "available \(doctor.availableTime)"
+        )
     }
 }
 
@@ -85,7 +105,8 @@ struct DoctorCard: View {
         fee: 2300.00,
         timeSlots: ["7:30", "8:00", "8:30", "9:00"],
         bio: "",
-        availability: "",
+        availability: ""
     ))
     .padding()
+    .environmentObject(AccessibilityViewModel())
 }

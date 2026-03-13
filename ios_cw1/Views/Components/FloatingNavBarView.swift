@@ -10,12 +10,15 @@ import SwiftUI
 struct FloatingNavBarView: View {
 
     @Binding var selectedTab: Int
+    @EnvironmentObject var accessibilityVM: AccessibilityViewModel
 
-    private let selectorSize: CGFloat = 54
+    private var selectorSize: CGFloat { accessibilityVM.isWheelchairModeEnabled ? 60 : 54 }
+    private var barHeight:    CGFloat { accessibilityVM.isWheelchairModeEnabled ? 82 : 70 }
+    private var iconSize:     CGFloat { accessibilityVM.isLargerTextEnabled ? 24 : 20 }
+    private var labelSize:    CGFloat { accessibilityVM.isLargerTextEnabled ? 11 : 9 }
 
     var body: some View {
         ZStack {
-            // Glass capsule background
             Capsule()
                 .fill(.ultraThinMaterial)
                 .overlay(
@@ -24,21 +27,23 @@ struct FloatingNavBarView: View {
                 )
                 .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 4)
 
-            // Nav items
             HStack(spacing: 0) {
                 ForEach(0..<4, id: \.self) { index in
-                    navItem(icon: navIcon(for: index),
-                            label: navLabel(for: index),
-                            index: index)
-                        .background(
-                            GeometryReader { geo in
-                                Color.clear
-                                    .preference(
-                                        key: NavBarPreferenceKey.self,
-                                        value: [index: geo.frame(in: .named("navBar"))]
-                                    )
-                            }
-                        )
+                    navItem(
+                        icon: navIcon(for: index),
+                        label: navLabel(for: index),
+                        hint: navHint(for: index),
+                        index: index
+                    )
+                    .background(
+                        GeometryReader { geo in
+                            Color.clear
+                                .preference(
+                                    key: NavBarPreferenceKey.self,
+                                    value: [index: geo.frame(in: .named("navBar"))]
+                                )
+                        }
+                    )
                 }
             }
             .frame(maxWidth: .infinity)
@@ -67,7 +72,9 @@ struct FloatingNavBarView: View {
                             .frame(width: selectorSize, height: selectorSize)
                             .position(x: frame.midX, y: geo.size.height / 2)
                             .animation(
-                                .interactiveSpring(response: 0.4, dampingFraction: 0.7, blendDuration: 0.2),
+                                accessibilityVM.isReduceMotionEnabled
+                                    ? nil
+                                    : .interactiveSpring(response: 0.4, dampingFraction: 0.7, blendDuration: 0.2),
                                 value: selectedTab
                             )
                             .allowsHitTesting(false)
@@ -75,10 +82,9 @@ struct FloatingNavBarView: View {
                 }
             }
         }
-        .frame(height: 70)
+        .frame(height: barHeight)
         .padding(.horizontal, 16)
     }
-
 
     private func navIcon(for index: Int) -> String {
         switch index {
@@ -100,31 +106,63 @@ struct FloatingNavBarView: View {
         }
     }
 
-    private func navItem(icon: String, label: String, index: Int) -> some View {
+    private func navHint(for index: Int) -> String {
+        switch index {
+        case 0: return "Go to home dashboard"
+        case 1: return "Browse clinic services"
+        case 2: return "View your appointments"
+        case 3: return "Open indoor navigation"
+        default: return ""
+        }
+    }
+
+    private func navItem(icon: String, label: String, hint: String, index: Int) -> some View {
         let isSelected = selectedTab == index
 
         return Button {
-            withAnimation(.interactiveSpring(response: 0.4, dampingFraction: 0.7)) {
+            withAnimation(
+                accessibilityVM.isReduceMotionEnabled
+                    ? nil
+                    : .interactiveSpring(response: 0.4, dampingFraction: 0.7)
+            ) {
                 selectedTab = index
             }
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(isSelected ? Color(#colorLiteral(red: 0.0, green: 0.48, blue: 0.78, alpha: 1)) : .gray)
-                    .scaleEffect(isSelected ? 1.1 : 1.0)
+                    .font(.system(size: iconSize, weight: .medium))
+                    .foregroundColor(
+                        isSelected
+                            ? accessibilityVM.accessibleColor(
+                                normal: Color(#colorLiteral(red: 0.0, green: 0.48, blue: 0.78, alpha: 1)),
+                                highContrast: .blue
+                              )
+                            : accessibilityVM.accessibleColor(normal: .gray, highContrast: Color(.darkGray))
+                    )
+                    .scaleEffect(isSelected && !accessibilityVM.isReduceMotionEnabled ? 1.1 : 1.0)
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+
                 Text(label)
-                    .font(.system(size: 9, weight: isSelected ? .semibold : .regular))
-                    .foregroundColor(isSelected ? Color(#colorLiteral(red: 0.0, green: 0.48, blue: 0.78, alpha: 1)) : .gray)
+                    .font(.system(size: labelSize, weight: isSelected ? .semibold : .regular))
+                    .foregroundColor(
+                        isSelected
+                            ? accessibilityVM.accessibleColor(
+                                normal: Color(#colorLiteral(red: 0.0, green: 0.48, blue: 0.78, alpha: 1)),
+                                highContrast: .blue
+                              )
+                            : accessibilityVM.accessibleColor(normal: .gray, highContrast: Color(.darkGray))
+                    )
             }
             .frame(maxWidth: .infinity)
+            .frame(minHeight: accessibilityVM.minimumTapTarget)
             .padding(.vertical, 8)
+            .contentShape(Rectangle())
         }
+        .accessibilityLabel(label)
+        .accessibilityHint(hint)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
-
-//  Preference Key
 
 struct NavBarPreferenceKey: PreferenceKey {
     static var defaultValue: [Int: CGRect] = [:]
@@ -135,4 +173,5 @@ struct NavBarPreferenceKey: PreferenceKey {
 
 #Preview {
     FloatingNavBarView(selectedTab: .constant(0))
+        .environmentObject(AccessibilityViewModel())
 }

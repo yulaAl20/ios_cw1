@@ -96,7 +96,7 @@ extension HomeView {
                 RoundedRectangle(cornerRadius: 24)
                     .fill(
                         LinearGradient(
-                            colors: [
+                    colors: [
                                 Color(hex: flowViewModel.stageColor[0]),
                                 Color(hex: flowViewModel.stageColor[1])
                             ],
@@ -130,7 +130,7 @@ extension HomeView {
         case .pharmacyPickup:
             pharmacyCardBody
         case .done:
-            doneCardBody
+    doneCardBody
         }
     }
 
@@ -391,8 +391,15 @@ extension HomeView {
                 .font(.headline)
 
             HStack(spacing: 0) {
-                quickServiceItem(icon: "stethoscope", title: "Find\nDoctor", color: .blue)
-                quickServiceItem(icon: "cross.case.fill", title: "Lab\nReports", color: .green)
+                NavigationLink(destination: ChooseDoctorView(selectedTab: $router.currentTab)) {
+                    quickServiceItem(icon: "stethoscope", title: "Find\nDoctor", color: .blue)
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink(destination: PastTestsAndOrdersView()) {
+                    quickServiceItem(icon: "cross.case.fill", title: "Lab\nReports", color: .green)
+                }
+                .buttonStyle(.plain)
 
                 NavigationLink(destination: PharmacyView()) {
                     VStack(spacing: 6) {
@@ -415,7 +422,10 @@ extension HomeView {
                 }
                 .buttonStyle(.plain)
 
-                quickServiceItem(icon: "waveform.path.ecg", title: "Scans", color: .purple)
+                NavigationLink(destination: PastTestsAndOrdersView(initialFilter: .radiology)) {
+                    quickServiceItem(icon: "waveform.path.ecg", title: "Scans", color: .purple)
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding()
@@ -432,10 +442,12 @@ extension HomeView {
                 Circle()
                     .fill(color.opacity(0.12))
                     .frame(width: 50, height: 50)
+
                 Image(systemName: icon)
                     .font(.system(size: 20))
                     .foregroundColor(color)
             }
+
             Text(title)
                 .font(.system(size: 10))
                 .foregroundColor(.gray)

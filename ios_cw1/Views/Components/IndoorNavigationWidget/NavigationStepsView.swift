@@ -11,6 +11,8 @@ struct NavigationStepsView: View {
     
     @Environment(\.dismiss) var dismiss
     let route: NavigationRoute
+
+    @StateObject private var speech = SpeechSynthesizer()
     
     var body: some View {
         NavigationView {
@@ -55,11 +57,17 @@ struct NavigationStepsView: View {
                                 
                                 Spacer()
                                 
-                                Button(action: {}) {
-                                    Image(systemName: "speaker.wave.2.fill")
+                                Button(action: {
+                                    speech.toggleSpeak(step.instruction)
+                                }) {
+                                    Image(systemName: speech.isSpeaking ? "speaker.slash.fill" : "speaker.wave.2.fill")
                                         .font(.system(size: 18))
                                         .foregroundColor(.secondary)
                                 }
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
+                                .accessibilityLabel("Read step \(step.stepNumber) aloud")
+                                .accessibilityHint("Plays audio of this navigation instruction")
                             }
                             .padding(.horizontal, 20)
                             .padding(.vertical, 12)
@@ -90,6 +98,7 @@ struct NavigationStepsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
+                        speech.stop()
                         dismiss()
                     }) {
                         Image(systemName: "xmark")
@@ -98,6 +107,9 @@ struct NavigationStepsView: View {
                     }
                 }
             }
+        }
+        .onDisappear {
+            speech.stop()
         }
     }
 }

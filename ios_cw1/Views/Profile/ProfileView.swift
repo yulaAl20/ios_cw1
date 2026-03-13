@@ -23,6 +23,7 @@ struct ProfileView: View {
                         .font(.title2)
                         .foregroundColor(.primary)
                 }
+                .accessibilityLabel("Back")
                 Spacer()
                 Text("My Profile")
                     .font(.headline)
@@ -49,6 +50,7 @@ struct ProfileView: View {
                             .foregroundColor(.blue)
                     }
                     .padding(.top, 20)
+                    .accessibilityHidden(true)
 
                     Text(userName.isEmpty ? "Your Name" : userName)
                         .font(.title2)
@@ -63,6 +65,7 @@ struct ProfileView: View {
                             Image(systemName: "phone.fill")
                                 .font(.caption)
                                 .foregroundColor(.blue)
+                                .accessibilityHidden(true)
                             Text(userPhone)
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
@@ -71,14 +74,20 @@ struct ProfileView: View {
 
                     VStack(spacing: 16) {
                         NavigationLink(destination: ProfileDetailsView()) {
-                            ProfileMenuItem(icon: "pencil.line", title: "Edit Details")
+                            ProfileMenuItem(icon: "pencil.line",    title: "Edit Details")
                         }
                         NavigationLink(destination: AddPatientsView()) {
-                            ProfileMenuItem(icon: "person.2.fill", title: "Add Patients")
+                            ProfileMenuItem(icon: "person.2.fill",  title: "Add Patients")
                         }
                         NavigationLink(destination: PaymentMethodsView()) {
                             ProfileMenuItem(icon: "creditcard.fill", title: "Payment Methods")
                         }
+
+                        // Accessibility settings entry point
+                        NavigationLink(destination: SettingsView()) {
+                            ProfileMenuItem(icon: "accessibility",   title: "Accessibility Settings")
+                        }
+                        .accessibilityHint("Configure wheelchair mode, color blind mode, deaf mode, and more")
                     }
                     .padding(.top, 20)
 
@@ -101,6 +110,7 @@ struct ProfileView: View {
                 .padding(.vertical, 16)
                 .background(Color(.systemBackground))
                 .shadow(color: .black.opacity(0.1), radius: 12, y: -6)
+                .accessibilityLabel("Sign out of your account")
             }
         }
         .navigationBarHidden(true)
@@ -108,7 +118,7 @@ struct ProfileView: View {
 }
 
 struct ProfileMenuItem: View {
-    let icon: String
+    let icon:  String
     let title: String
 
     var body: some View {
@@ -117,6 +127,7 @@ struct ProfileMenuItem: View {
                 .font(.body)
                 .foregroundColor(.blue)
                 .frame(width: 32)
+                .accessibilityHidden(true)
             Text(title)
                 .font(.body)
                 .foregroundColor(.primary)
@@ -124,6 +135,7 @@ struct ProfileMenuItem: View {
             Image(systemName: "chevron.right")
                 .font(.caption)
                 .foregroundColor(.gray)
+                .accessibilityHidden(true)
         }
         .padding()
         .background(Color(.systemGray6))
@@ -132,7 +144,6 @@ struct ProfileMenuItem: View {
 }
 
 #Preview {
-    NavigationStack {
-        ProfileView()
-    }
+    NavigationStack { ProfileView() }
+        .environmentObject(AccessibilityViewModel())
 }
