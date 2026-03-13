@@ -11,6 +11,7 @@ struct HeaderView: View {
     
     var title: String? = nil
     @State private var showProfile = false
+    @State private var showNotifications = false
     
     var body: some View {
         VStack(spacing: 10) {
@@ -40,22 +41,25 @@ struct HeaderView: View {
                 
                 Spacer()
                 
-                ZStack {
-                    Circle()
-                        .fill(Color.white.opacity(0.25))
-                        .frame(width: 36, height: 36)
-                    Image(systemName: "bell")
-                        .font(.system(size: 18))
-                        .foregroundColor(.black.opacity(0.6))
+                Button {
+                    showNotifications = true
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.25))
+                            .frame(width: 36, height: 36)
+                        Image(systemName: "bell")
+                            .font(.system(size: 18))
+                            .foregroundColor(.black.opacity(0.6))
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Notifications")
+                .sheet(isPresented: $showNotifications) {
+                    NotificationsPageView()
                 }
             }
         }
         .foregroundColor(.black)
     }
-}
-
-#Preview {
-    HeaderView()
-        .padding()
-        .environmentObject(AccessibilityViewModel())
 }
